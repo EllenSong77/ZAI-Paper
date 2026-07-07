@@ -35,7 +35,7 @@
       }
 
       .wrap {
-        max-width: 1180px;
+        max-width: 1480px;
         margin: 0 auto;
       }
 
@@ -52,7 +52,7 @@
       }
 
       main {
-        max-width: 1180px;
+        max-width: 1480px;
         margin: -22px auto 48px;
         padding: 0 24px;
       }
@@ -115,7 +115,8 @@
 
       table {
         width: 100%;
-        min-width: 980px;
+        min-width: 1240px;
+        table-layout: fixed;
         border-collapse: collapse;
         background: white;
       }
@@ -147,12 +148,17 @@
 
       .translation {
         color: #344054;
-        margin-top: 6px;
       }
 
       .authors {
         color: #344054;
-        max-width: 360px;
+      }
+
+      .truncate {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       a {
@@ -204,12 +210,21 @@
         <p class="meta" id="meta">加载中...</p>
         <div class="table-wrap">
           <table>
+            <colgroup>
+              <col style="width: 30%" />
+              <col style="width: 24%" />
+              <col style="width: 20%" />
+              <col style="width: 10%" />
+              <col style="width: 8%" />
+              <col style="width: 8%" />
+            </colgroup>
             <thead>
               <tr>
                 <th>论文</th>
+                <th>汉译</th>
                 <th>作者</th>
+                <th>arXiv 号</th>
                 <th>发表时间</th>
-                <th>期刊</th>
                 <th>链接</th>
               </tr>
             </thead>
@@ -225,6 +240,15 @@
 
       function formatDate(value) {
         return value || "";
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
       }
 
       function renderStats(summary) {
@@ -256,7 +280,6 @@
             row.authors,
             row.translated_title,
             row.arxiv_id,
-            row.journal_name,
           ]
             .join(" ")
             .toLowerCase();
@@ -269,25 +292,31 @@
 
         $("papers").innerHTML =
           rows
-            .map(
-              (row) => `
+            .map((row) => {
+              const title = escapeHtml(row.title);
+              const translatedTitle = escapeHtml(row.translated_title || "");
+              const authors = escapeHtml(row.authors);
+              const arxivId = escapeHtml(row.arxiv_id);
+              const published = escapeHtml(formatDate(row.published));
+              const arxivUrl = escapeHtml(row.arxiv_url);
+              const pdfUrl = escapeHtml(row.pdf_url);
+              return `
                 <tr>
                   <td>
-                    <div class="title">${row.title}</div>
-                    <div class="translation">${row.translated_title || ""}</div>
-                    <div class="meta">${row.arxiv_id}</div>
+                    <span class="title truncate" title="${title}">${title}</span>
                   </td>
-                  <td class="authors">${row.authors}</td>
-                  <td>${formatDate(row.published)}</td>
-                  <td>${[row.journal_name, row.journal_issue].filter(Boolean).join(", ") || "—"}</td>
+                  <td><span class="translation truncate" title="${translatedTitle}">${translatedTitle}</span></td>
+                  <td><span class="authors truncate" title="${authors}">${authors}</span></td>
+                  <td>${arxivId}</td>
+                  <td>${published}</td>
                   <td>
-                    <a href="${row.arxiv_url}" target="_blank" rel="noreferrer">arXiv</a>
+                    <a href="${arxivUrl}" target="_blank" rel="noreferrer">arXiv</a>
                     ·
-                    <a href="${row.pdf_url}" target="_blank" rel="noreferrer">PDF</a>
+                    <a href="${pdfUrl}" target="_blank" rel="noreferrer">PDF</a>
                   </td>
-                </tr>`
-            )
-            .join("") || `<tr><td colspan="5" class="empty">没有匹配结果</td></tr>`;
+                </tr>`;
+            })
+            .join("") || `<tr><td colspan="6" class="empty">没有匹配结果</td></tr>`;
       }
 
       fetch("./data/zhipu_papers.json", { cache: "no-store" })
