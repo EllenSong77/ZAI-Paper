@@ -20,7 +20,7 @@ ARXIV_API = "https://export.arxiv.org/api/query"
 GLM_API = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 ATOM = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
 OPENSEARCH = {"os": "http://a9.com/-/spec/opensearch/1.1/"}
-CACHE_VERSION = "people-products-rules-v1"
+CACHE_VERSION = "people-products-rules-v2"
 
 PEOPLE = {
     "唐杰": "Jie Tang",
@@ -31,7 +31,12 @@ PEOPLE = {
     "曾奥涵": "Aohan Zeng",
     "郑问笛": "Wendi Zheng",
 }
-PRODUCTS = ("GLM", "CogView", "CogVideoX", "CogVLM")
+PRODUCTS = ("GLM", "CogView", "CogVideo", "CogVLM")
+ORG_AUTHOR_QUERIES = {
+    "Zhipu": "au:Zhipu",
+    "Z.AI": 'au:"Z.AI"',
+    "GLM team-like authors": "au:GLM",
+}
 
 # These four two-person papers were manually verified after the LLM confused
 # same-name authors with team membership.
@@ -108,7 +113,7 @@ def parse_feed(xml: str) -> list[Paper]:
     return papers
 
 
-def fetch_author(session: requests.Session, author: str) -> list[Paper]:
+def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper]:
     papers = []
     offset = 0
     total = 1
@@ -116,7 +121,7 @@ def fetch_author(session: requests.Session, author: str) -> list[Paper]:
         response = session.get(
             ARXIV_API,
             params={
-                "search_query": f'au:"{author}"',
+                "search_query": query,
                 "start": offset,
                 "max_results": 300,
                 "sortBy": "submittedDate",
@@ -132,10 +137,14 @@ def fetch_author(session: requests.Session, author: str) -> list[Paper]:
             break
         papers.extend(page)
         offset += len(page)
-        print(f"arXiv {author}: {offset}/{total}", flush=True)
+        print(f"arXiv {label}: {offset}/{total}", flush=True)
         if offset < total:
             time.sleep(3)
     return papers
+
+
+def fetch_author(session: requests.Session, author: str) -> list[Paper]:
+    return fetch_query(session, author, f'au:"{author}"')
 
 
 def matched_people(paper: Paper) -> list[str]:
@@ -146,6 +155,23 @@ def matched_people(paper: Paper) -> list[str]:
 def matched_products(paper: Paper) -> list[str]:
     text = f"{paper.title} {paper.abstract}".casefold()
     return [product for product in PRODUCTS if product.casefold() in text]
+
+
+def matched_org_signals(paper: Paper) -> list[str]:
+    signals = []
+    for author in paper.authors:
+        normalized = re.sub(r"[^a-z0-9]+", "", author.casefold())
+        author_cf = author.casefold()
+        if (
+            author_cf.strip() == "zhipu"
+            or "z.ai" in author_cf
+            or "zhipuai" in normalized
+            or ("zhipu" in normalized and "team" in normalized)
+        ):
+            signals.append(author)
+        elif "glm" in normalized and "team" in normalized:
+            signals.append(author)
+    return signals
 
 
 def split_journal_ref(value: str) -> tuple[str, str]:
@@ -174,7 +200,8 @@ def prompt(items: list[dict]) -> str:
 
 规则：
 - 命中指定作者3人及以上，收录；
-- 命中 GLM、CogView、CogVideoX、CogVLM，且指定作者至少2人，收录；
+- 作者或机构包含 Zhipu、Z.AI，或同一机构名同时包含 GLM 和 Team，收录；
+- 命中 GLM、CogView、CogVideo、CogVLM，且指定作者至少2人，收录；
 - 仅命中2人且无产品词时，结合标题、摘要、完整作者排除同名作者和无关论文。
 
 指定作者：唐杰、刘德兵、张鹏、顾晓韬、刘潇、曾奥涵、郑问笛。
@@ -224,6 +251,7 @@ def review_and_translate(
                 "abstract": item["abstract"][:1400],
                 "people": item["people"],
                 "products": item["products"],
+                "org_signals": item["org_signals"],
                 "automatic": item["automatic"],
             }
             for item in batch
@@ -282,9 +310,10 @@ def build_candidates(papers: dict[str, Paper]) -> list[dict]:
     candidates = []
     for paper in papers.values():
         people = matched_people(paper)
-        if len(people) < 2:
-            continue
         products = matched_products(paper)
+        org_signals = matched_org_signals(paper)
+        if len(people) < 2 and not org_signals:
+            continue
         candidates.append(
             {
                 "arxiv_id": paper.arxiv_id,
@@ -293,9 +322,11 @@ def build_candidates(papers: dict[str, Paper]) -> list[dict]:
                 "abstract": paper.abstract,
                 "people": people,
                 "products": products,
+                "org_signals": org_signals,
                 "automatic": (
                     len(people) >= 3
-                    or bool(products)
+                    or bool(org_signals)
+                    or (bool(products) and len(people) >= 2)
                     or paper.title in VERIFIED_TITLES
                 ),
             }
@@ -313,8 +344,11 @@ def main() -> None:
 
     papers = {
         paper.arxiv_id: paper
-        for author in PEOPLE.values()
-        for paper in fetch_author(session, author)
+        for label, query in (
+            [(author, f'au:"{author}"') for author in PEOPLE.values()]
+            + list(ORG_AUTHOR_QUERIES.items())
+        )
+        for paper in fetch_query(session, label, query)
     }
     candidates = build_candidates(papers)
     reviews = review_and_translate(

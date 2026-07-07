@@ -4,6 +4,8 @@ from unittest import TestCase
 from search_papers import (
     VERIFIED_TITLES,
     Paper,
+    build_candidates,
+    matched_org_signals,
     matched_people,
     matched_products,
     split_journal_ref,
@@ -29,7 +31,25 @@ class RuleTests(TestCase):
 
     def test_product_matching_is_case_insensitive(self) -> None:
         paper = self.paper(("Jie Tang", "Wendi Zheng"), "CogVideoX report")
-        self.assertEqual(matched_products(paper), ["CogVideoX"])
+        self.assertEqual(matched_products(paper), ["CogVideo"])
+
+    def test_org_signals_match_zhipu_and_glm_teams(self) -> None:
+        paper = self.paper(("GLM-V Team", "AutoGLMTEAM", "Z.AI Research", "Zhipu AI"))
+        self.assertEqual(
+            matched_org_signals(paper),
+            ["GLM-V Team", "AutoGLMTEAM", "Z.AI Research", "Zhipu AI"],
+        )
+
+    def test_zhipu_person_name_is_not_org_signal(self) -> None:
+        paper = self.paper(("Zhipu Liu", "Zhipu Cui", "Zhipu Zhou"))
+        self.assertEqual(matched_org_signals(paper), [])
+
+    def test_org_signal_is_automatic_candidate_without_two_people(self) -> None:
+        paper = self.paper(("GLM Team", "Someone Else"), "Technical report")
+        candidates = build_candidates({paper.arxiv_id: paper})
+        self.assertEqual(len(candidates), 1)
+        self.assertTrue(candidates[0]["automatic"])
+        self.assertEqual(candidates[0]["org_signals"], ["GLM Team"])
 
     def test_journal_split(self) -> None:
         self.assertEqual(
