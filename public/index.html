@@ -347,7 +347,7 @@
       function renderStats(summary) {
         const items = [
           ["最终收录", summary.final_count],
-          ["至少两人命中", summary.at_least_two_people],
+          ["候选论文", summary.candidate_count ?? summary.at_least_two_people],
           ["规则直接收录", summary.automatic_include],
           ["LLM 通过", summary.probability_approved_by_llm],
         ];

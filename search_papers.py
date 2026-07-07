@@ -11,9 +11,6 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-from dotenv import load_dotenv
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 ROOT = Path(__file__).resolve().parent
 ARXIV_API = "https://export.arxiv.org/api/query"
@@ -60,20 +57,48 @@ class Paper:
     journal_ref: str
 
 
+def load_env(path: Path) -> None:
+    if not path.exists():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'\"")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def clean(text: str | None) -> str:
     return re.sub(r"\s+", " ", text or "").strip()
 
 
-def make_session(retries: int) -> requests.Session:
-    retry = Retry(
-        total=retries,
-        backoff_factor=2,
-        status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=None,
-    )
-    session = requests.Session()
-    session.mount("https://", HTTPAdapter(max_retries=retry))
-    return session
+def request_with_retry(
+    session: requests.Session,
+    method: str,
+    url: str,
+    retries: int = 3,
+    **kwargs,
+) -> requests.Response:
+    retry_statuses = {429, 500, 502, 503, 504}
+    last_error: Exception | None = None
+    for attempt in range(retries):
+        try:
+            response = session.request(method, url, **kwargs)
+        except requests.RequestException as error:
+            last_error = error
+            if attempt < retries - 1:
+                time.sleep(2**attempt)
+                continue
+            raise
+        if response.status_code in retry_statuses and attempt < retries - 1:
+            time.sleep(2**attempt)
+            continue
+        response.raise_for_status()
+        return response
+    raise RuntimeError("unreachable retry state") from last_error
 
 
 def parse_feed(xml: str) -> list[Paper]:
@@ -118,7 +143,9 @@ def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper
     offset = 0
     total = 1
     while offset < total:
-        response = session.get(
+        response = request_with_retry(
+            session,
+            "GET",
             ARXIV_API,
             params={
                 "search_query": query,
@@ -129,7 +156,6 @@ def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper
             },
             timeout=30,
         )
-        response.raise_for_status()
         root = ET.fromstring(response.text)
         total = int(root.findtext("os:totalResults", "0", OPENSEARCH))
         page = parse_feed(response.text)
@@ -141,11 +167,6 @@ def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper
         if offset < total:
             time.sleep(3)
     return papers
-
-
-def fetch_author(session: requests.Session, author: str) -> list[Paper]:
-    return fetch_query(session, author, f'au:"{author}"')
-
 
 def matched_people(paper: Paper) -> list[str]:
     authors = {name.casefold() for name in paper.authors}
@@ -239,7 +260,7 @@ def review_and_translate(
     cache_path = ROOT / ".cache/review_and_translation.json"
     cache = load_cache(cache_path)
     missing = [item for item in candidates if item["arxiv_id"] not in cache]
-    session = make_session(6)
+    session = requests.Session()
 
     for start in range(0, len(missing), 15):
         batch = missing[start : start + 15]
@@ -259,8 +280,11 @@ def review_and_translate(
         expected = [item["arxiv_id"] for item in batch]
         for attempt in range(3):
             try:
-                response = session.post(
+                response = request_with_retry(
+                    session,
+                    "POST",
                     GLM_API,
+                    retries=3,
                     headers={"Authorization": f"Bearer {api_key}"},
                     json={
                         "model": model,
@@ -270,7 +294,6 @@ def review_and_translate(
                     },
                     timeout=180,
                 )
-                response.raise_for_status()
                 results = parse_json_array(
                     response.json()["choices"][0]["message"]["content"]
                 )
@@ -337,17 +360,19 @@ def build_candidates(papers: dict[str, Paper]) -> list[dict]:
     return candidates
 
 
+def arxiv_queries() -> list[tuple[str, str]]:
+    author_queries = [(author, f'au:"{author}"') for author in PEOPLE.values()]
+    return author_queries + list(ORG_AUTHOR_QUERIES.items())
+
+
 def main() -> None:
-    load_dotenv(ROOT / ".env")
-    session = make_session(3)
+    load_env(ROOT / ".env")
+    session = requests.Session()
     session.headers["User-Agent"] = "ArxivZhipuPaperSearch/1.0"
 
     papers = {
         paper.arxiv_id: paper
-        for label, query in (
-            [(author, f'au:"{author}"') for author in PEOPLE.values()]
-            + list(ORG_AUTHOR_QUERIES.items())
-        )
+        for label, query in arxiv_queries()
         for paper in fetch_query(session, label, query)
     }
     candidates = build_candidates(papers)
@@ -383,7 +408,7 @@ def main() -> None:
     result = {
         "summary": {
             "queried_unique_papers": len(papers),
-            "at_least_two_people": len(candidates),
+            "candidate_count": len(candidates),
             "automatic_include": sum(item["automatic"] for item in candidates),
             "probability_approved_by_llm": llm_approved,
             "final_count": len(rows),
@@ -391,14 +416,11 @@ def main() -> None:
         "rows": rows,
     }
     result["summary"]["updated_at"] = datetime.now().astimezone().isoformat()
-    for output in (
-        ROOT / "outputs/zhipu_papers.json",
-        ROOT / "public/data/zhipu_papers.json",
-    ):
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(
-            json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+    output = ROOT / "public/data/zhipu_papers.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(result["summary"], ensure_ascii=False))
 
 
