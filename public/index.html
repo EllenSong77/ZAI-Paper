@@ -7,13 +7,15 @@
     <style>
       :root {
         color-scheme: light;
-        --bg: #f5f7fb;
+        --background: #fafafa;
         --card: #ffffff;
-        --text: #18212f;
-        --muted: #667085;
-        --line: #d9e1ec;
-        --brand: #245b78;
-        --brand-soft: #e6f2f7;
+        --foreground: #09090b;
+        --muted: #71717a;
+        --muted-bg: #f4f4f5;
+        --border: #e4e4e7;
+        --accent: #18181b;
+        --accent-soft: #f4f4f5;
+        --ring: rgba(24, 24, 27, 0.08);
       }
 
       * {
@@ -22,16 +24,17 @@
 
       body {
         margin: 0;
-        background: var(--bg);
-        color: var(--text);
+        background: var(--background);
+        color: var(--foreground);
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
           "Segoe UI", sans-serif;
+        font-size: 13px;
       }
 
       header {
-        background: linear-gradient(135deg, #163b50, #2d7797);
-        color: white;
-        padding: 48px 24px 36px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.86);
+        padding: 26px 24px 24px;
       }
 
       .wrap {
@@ -40,118 +43,155 @@
       }
 
       h1 {
-        margin: 0 0 12px;
-        font-size: clamp(28px, 4vw, 44px);
-        letter-spacing: -0.03em;
+        margin: 0 0 8px;
+        font-size: clamp(22px, 3vw, 32px);
+        letter-spacing: -0.04em;
+        line-height: 1.15;
       }
 
       .subtitle {
         margin: 0;
-        color: #d9ecf5;
-        line-height: 1.7;
+        color: var(--muted);
+        line-height: 1.5;
       }
 
       main {
         max-width: 1480px;
-        margin: -22px auto 48px;
+        margin: 20px auto 44px;
         padding: 0 24px;
       }
 
       .panel {
         background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        box-shadow: 0 14px 40px rgba(22, 59, 80, 0.08);
-        padding: 22px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 1px 2px var(--ring);
+        padding: 16px;
       }
 
       .stats {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 14px;
-        margin-bottom: 16px;
+        gap: 10px;
+        margin-bottom: 14px;
       }
 
       .stat {
-        background: var(--brand-soft);
-        border-radius: 14px;
-        padding: 16px;
+        background: var(--muted-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
       }
 
       .stat b {
         display: block;
-        color: var(--brand);
-        font-size: 26px;
+        color: var(--foreground);
+        font-size: 20px;
         line-height: 1.1;
       }
 
       .stat span {
         color: var(--muted);
-        font-size: 13px;
+        font-size: 12px;
       }
 
       .toolbar {
         display: grid;
         grid-template-columns: 1fr 170px;
-        gap: 12px;
-        margin: 18px 0;
+        gap: 10px;
+        margin: 14px 0;
       }
 
       input,
       select {
         width: 100%;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 9px 11px;
         font: inherit;
         background: white;
       }
 
+      input:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--ring);
+        outline: none;
+      }
+
       .table-wrap {
         overflow: auto;
-        border: 1px solid var(--line);
-        border-radius: 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
       }
 
       table {
         width: 100%;
-        min-width: 1240px;
+        min-width: 1120px;
         table-layout: fixed;
         border-collapse: collapse;
         background: white;
+        font-size: 12px;
       }
 
       th,
       td {
-        padding: 13px 14px;
-        border-bottom: 1px solid var(--line);
-        vertical-align: top;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
         text-align: left;
       }
 
       th {
         position: sticky;
         top: 0;
-        background: #245b78;
-        color: white;
+        background: #fafafa;
+        color: var(--muted);
         z-index: 1;
+        height: 34px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
         white-space: nowrap;
       }
 
-      tr:nth-child(even) td {
-        background: #f9fcfd;
+      tbody tr:hover td {
+        background: #fafafa;
       }
 
       .title {
+        color: var(--foreground);
         font-weight: 700;
+        line-height: 1.25;
       }
 
       .translation {
-        color: #344054;
+        color: var(--muted);
+        line-height: 1.25;
+        margin-top: 3px;
       }
 
       .authors {
-        color: #344054;
+        color: #3f3f46;
+      }
+
+      .id-pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: #27272a;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+        font-size: 11px;
+        line-height: 1;
+        padding: 4px 7px;
+        white-space: nowrap;
+      }
+
+      .links {
+        white-space: nowrap;
       }
 
       .truncate {
@@ -162,8 +202,8 @@
       }
 
       a {
-        color: #116b93;
-        font-weight: 650;
+        color: var(--accent);
+        font-weight: 600;
         text-decoration: none;
       }
 
@@ -174,6 +214,11 @@
       .empty,
       .meta {
         color: var(--muted);
+      }
+
+      .meta {
+        font-size: 12px;
+        margin: 0 0 10px;
       }
 
       @media (max-width: 760px) {
@@ -211,9 +256,8 @@
         <div class="table-wrap">
           <table>
             <colgroup>
-              <col style="width: 30%" />
+              <col style="width: 50%" />
               <col style="width: 24%" />
-              <col style="width: 20%" />
               <col style="width: 10%" />
               <col style="width: 8%" />
               <col style="width: 8%" />
@@ -221,7 +265,6 @@
             <thead>
               <tr>
                 <th>论文</th>
-                <th>汉译</th>
                 <th>作者</th>
                 <th>arXiv 号</th>
                 <th>发表时间</th>
@@ -304,19 +347,19 @@
                 <tr>
                   <td>
                     <span class="title truncate" title="${title}">${title}</span>
+                    <span class="translation truncate" title="${translatedTitle}">${translatedTitle}</span>
                   </td>
-                  <td><span class="translation truncate" title="${translatedTitle}">${translatedTitle}</span></td>
                   <td><span class="authors truncate" title="${authors}">${authors}</span></td>
-                  <td>${arxivId}</td>
+                  <td><span class="id-pill">${arxivId}</span></td>
                   <td>${published}</td>
-                  <td>
+                  <td class="links">
                     <a href="${arxivUrl}" target="_blank" rel="noreferrer">arXiv</a>
                     ·
                     <a href="${pdfUrl}" target="_blank" rel="noreferrer">PDF</a>
                   </td>
                 </tr>`;
             })
-            .join("") || `<tr><td colspan="6" class="empty">没有匹配结果</td></tr>`;
+            .join("") || `<tr><td colspan="5" class="empty">没有匹配结果</td></tr>`;
       }
 
       fetch("./data/zhipu_papers.json", { cache: "no-store" })
