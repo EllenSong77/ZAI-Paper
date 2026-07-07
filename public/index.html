@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>智谱 arXiv 论文列表</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --text: #18212f;
+        --muted: #667085;
+        --line: #d9e1ec;
+        --brand: #245b78;
+        --brand-soft: #e6f2f7;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      header {
+        background: linear-gradient(135deg, #163b50, #2d7797);
+        color: white;
+        padding: 48px 24px 36px;
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(28px, 4vw, 44px);
+        letter-spacing: -0.03em;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: #d9ecf5;
+        line-height: 1.7;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: -22px auto 48px;
+        padding: 0 24px;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 14px 40px rgba(22, 59, 80, 0.08);
+        padding: 22px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+
+      .stat {
+        background: var(--brand-soft);
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .stat b {
+        display: block;
+        color: var(--brand);
+        font-size: 26px;
+        line-height: 1.1;
+      }
+
+      .stat span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr 170px;
+        gap: 12px;
+        margin: 18px 0;
+      }
+
+      input,
+      select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font: inherit;
+        background: white;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+
+      table {
+        width: 100%;
+        min-width: 980px;
+        border-collapse: collapse;
+        background: white;
+      }
+
+      th,
+      td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        text-align: left;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #245b78;
+        color: white;
+        z-index: 1;
+        white-space: nowrap;
+      }
+
+      tr:nth-child(even) td {
+        background: #f9fcfd;
+      }
+
+      .title {
+        font-weight: 700;
+      }
+
+      .translation {
+        color: #344054;
+        margin-top: 6px;
+      }
+
+      .authors {
+        color: #344054;
+        max-width: 360px;
+      }
+
+      a {
+        color: #116b93;
+        font-weight: 650;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .empty,
+      .meta {
+        color: var(--muted);
+      }
+
+      @media (max-width: 760px) {
+        .stats,
+        .toolbar {
+          grid-template-columns: 1fr;
+        }
+
+        main {
+          padding: 0 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <h1>智谱 arXiv 论文列表</h1>
+        <p class="subtitle">
+          基于指定作者、模型关键词和 GLM 审核规则自动更新。页面只展示最终收录论文。
+        </p>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="stats" id="stats"></div>
+        <div class="toolbar">
+          <input id="search" type="search" placeholder="搜索标题、作者、汉译或 arXiv ID" />
+          <select id="year">
+            <option value="">全部年份</option>
+          </select>
+        </div>
+        <p class="meta" id="meta">加载中...</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>论文</th>
+                <th>作者</th>
+                <th>发表时间</th>
+                <th>期刊</th>
+                <th>链接</th>
+              </tr>
+            </thead>
+            <tbody id="papers"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const state = { rows: [], summary: {} };
+      const $ = (id) => document.getElementById(id);
+
+      function formatDate(value) {
+        return value || "";
+      }
+
+      function renderStats(summary) {
+        const items = [
+          ["最终收录", summary.final_count],
+          ["至少两人命中", summary.at_least_two_people],
+          ["规则直接收录", summary.automatic_include],
+          ["LLM 通过", summary.probability_approved_by_llm],
+        ];
+        $("stats").innerHTML = items
+          .map(([label, value]) => `<div class="stat"><b>${value ?? "-"}</b><span>${label}</span></div>`)
+          .join("");
+      }
+
+      function renderYears(rows) {
+        const years = [...new Set(rows.map((row) => row.published.slice(0, 4)))].sort().reverse();
+        $("year").insertAdjacentHTML(
+          "beforeend",
+          years.map((year) => `<option value="${year}">${year}</option>`).join("")
+        );
+      }
+
+      function render() {
+        const query = $("search").value.trim().toLowerCase();
+        const year = $("year").value;
+        const rows = state.rows.filter((row) => {
+          const haystack = [
+            row.title,
+            row.authors,
+            row.translated_title,
+            row.arxiv_id,
+            row.journal_name,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return (!year || row.published.startsWith(year)) && (!query || haystack.includes(query));
+        });
+
+        $("meta").textContent = `显示 ${rows.length} / ${state.rows.length} 篇；更新于 ${
+          state.summary.updated_at ? new Date(state.summary.updated_at).toLocaleString("zh-CN") : "未知"
+        }`;
+
+        $("papers").innerHTML =
+          rows
+            .map(
+              (row) => `
+                <tr>
+                  <td>
+                    <div class="title">${row.title}</div>
+                    <div class="translation">${row.translated_title || ""}</div>
+                    <div class="meta">${row.arxiv_id}</div>
+                  </td>
+                  <td class="authors">${row.authors}</td>
+                  <td>${formatDate(row.published)}</td>
+                  <td>${[row.journal_name, row.journal_issue].filter(Boolean).join(", ") || "—"}</td>
+                  <td>
+                    <a href="${row.arxiv_url}" target="_blank" rel="noreferrer">arXiv</a>
+                    ·
+                    <a href="${row.pdf_url}" target="_blank" rel="noreferrer">PDF</a>
+                  </td>
+                </tr>`
+            )
+            .join("") || `<tr><td colspan="5" class="empty">没有匹配结果</td></tr>`;
+      }
+
+      fetch("./data/zhipu_papers.json", { cache: "no-store" })
+        .then((response) => response.json())
+        .then((data) => {
+          state.rows = data.rows || [];
+          state.summary = data.summary || {};
+          renderStats(state.summary);
+          renderYears(state.rows);
+          render();
+        })
+        .catch((error) => {
+          $("meta").textContent = `加载失败：${error.message}`;
+        });
+
+      $("search").addEventListener("input", render);
+      $("year").addEventListener("change", render);
+    </script>
+  </body>
+</html>
