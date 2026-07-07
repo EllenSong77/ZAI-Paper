@@ -1,23 +1,13 @@
 {
   "summary": {
-    "queried_unique_papers": 1777,
-    "at_least_two_people": 94,
+    "queried_unique_papers": 1800,
+    "at_least_two_people": 95,
     "automatic_include": 49,
-    "probability_approved_by_llm": 43,
-    "final_count": 92
+    "probability_approved_by_llm": 0,
+    "final_count": 49,
+    "updated_at": "2026-07-07T06:12:00.505633+00:00"
   },
   "rows": [
-    {
-      "arxiv_id": "2606.08656",
-      "title": "From Player to Master: Enhancing Test-Time Learning of LLM Agents via Reinforcement Learning over Memory",
-      "authors": "Yishuo Cai, Xingyu Guo, Xuancheng Huang, Jinhua Du, Can Huang, Wenxuan Huang, Wenhan Ma, Yuyang Hu, Aohan Zeng, Jie Tang, Xu Sun",
-      "translated_title": "从玩家到大师：通过基于记忆的强化学习增强LLM智能体的测试时学习",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2026-06-07",
-      "pdf_url": "https://arxiv.org/pdf/2606.08656v1",
-      "arxiv_url": "https://arxiv.org/abs/2606.08656v1"
-    },
     {
       "arxiv_id": "2604.26752",
       "title": "GLM-5V-Turbo: Toward a Native Foundation Model for Multimodal Agents",
@@ -28,28 +18,6 @@
       "published": "2026-04-29",
       "pdf_url": "https://arxiv.org/pdf/2604.26752v3",
       "arxiv_url": "https://arxiv.org/abs/2604.26752v3"
-    },
-    {
-      "arxiv_id": "2604.19071",
-      "title": "HoWToBench: Holistic Evaluation for LLM's Capability in Human-level Writing using Tree of Writing",
-      "authors": "Andrew Zhuoer Feng, Cunxiang Wang, Yu Luo, Lin Fan, Yilin Zhou, Zikang Wang, Xiaotao Gu, Jie Tang, Hongning Wang, Minlie Huang",
-      "translated_title": "HoWToBench：基于写作树的大模型人类级写作能力全面评估",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2026-04-21",
-      "pdf_url": "https://arxiv.org/pdf/2604.19071v1",
-      "arxiv_url": "https://arxiv.org/abs/2604.19071v1"
-    },
-    {
-      "arxiv_id": "2603.26648",
-      "title": "Vision2Web: A Hierarchical Benchmark for Visual Website Development with Agent Verification",
-      "authors": "Zehai He, Wenyi Hong, Zhen Yang, Ziyang Pan, Mingdao Liu, Xiaotao Gu, Jie Tang",
-      "translated_title": "Vision2Web：基于智能体验证的视觉网站开发层次化基准",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2026-03-27",
-      "pdf_url": "https://arxiv.org/pdf/2603.26648v2",
-      "arxiv_url": "https://arxiv.org/abs/2603.26648v2"
     },
     {
       "arxiv_id": "2603.12201",
@@ -77,7 +45,7 @@
       "arxiv_id": "2602.15763",
       "title": "GLM-5: from Vibe Coding to Agentic Engineering",
       "authors": "GLM-5-Team, :, Aohan Zeng, Xin Lv, Zhenyu Hou, Zhengxiao Du, Qinkai Zheng, Bin Chen, Da Yin, Chendi Ge, Chenghua Huang, Chengxing Xie, Chenzheng Zhu, Congfeng Yin, Cunxiang Wang, Gengzheng Pan, Hao Zeng, Haoke Zhang, Haoran Wang, Huilong Chen, Jiajie Zhang, Jian Jiao, Jiaqi Guo, Jingsen Wang, Jingzhao Du, Jinzhu Wu, Kedong Wang, Lei Li, Lin Fan, Lucen Zhong, Mingdao Liu, Mingming Zhao, Pengfan Du, Qian Dong, Rui Lu, Shuang-Li, Shulin Cao, Song Liu, Ting Jiang, Xiaodong Chen, Xiaohan Zhang, Xuancheng Huang, Xuezhen Dong, Yabo Xu, Yao Wei, Yifan An, Yilin Niu, Yitong Zhu, Yuanhao Wen, Yukuo Cen, Yushi Bai, Zhongpei Qiao, Zihan Wang, Zikang Wang, Zilin Zhu, Ziqiang Liu, Zixuan Li, Bojie Wang, Bosi Wen, Can Huang, Changpeng Cai, Chao Yu, Chen Li, Chengwei Hu, Chenhui Zhang, Dan Zhang, Daoyan Lin, Dayong Yang, Di Wang, Ding Ai, Erle Zhu, Fangzhou Yi, Feiyu Chen, Guohong Wen, Hailong Sun, Haisha Zhao, Haiyi Hu, Hanchen Zhang, Hanrui Liu, Hanyu Zhang, Hao Peng, Hao Tai, Haobo Zhang, He Liu, Hongwei Wang, Hongxi Yan, Hongyu Ge, Huan Liu, Huanpeng Chu, Jia'ni Zhao, Jiachen Wang, Jiajing Zhao, Jiamin Ren, Jiapeng Wang, Jiaxin Zhang, Jiayi Gui, Jiayue Zhao, Jijie Li, Jing An, Jing Li, Jingwei Yuan, Jinhua Du, Jinxin Liu, Junkai Zhi, Junwen Duan, Kaiyue Zhou, Kangjian Wei, Ke Wang, Keyun Luo, Laiqiang Zhang, Leigang Sha, Liang Xu, Lindong Wu, Lintao Ding, Lu Chen, Minghao Li, Nianyi Lin, Pan Ta, Qiang Zou, Rongjun Song, Ruiqi Yang, Shangqing Tu, Shangtong Yang, Shaoxiang Wu, Shengyan Zhang, Shijie Li, Shuang Li, Shuyi Fan, Wei Qin, Wei Tian, Weining Zhang, Wenbo Yu, Wenjie Liang, Xiang Kuang, Xiangmeng Cheng, Xiangyang Li, Xiaoquan Yan, Xiaowei Hu, Xiaoying Ling, Xing Fan, Xingye Xia, Xinyuan Zhang, Xinze Zhang, Xirui Pan, Xu Zou, Xunkai Zhang, Yadi Liu, Yandong Wu, Yanfu Li, Yidong Wang, Yifan Zhu, Yijun Tan, Yilin Zhou, Yiming Pan, Ying Zhang, Yinpei Su, Yipeng Geng, Yong Yan, Yonglin Tan, Yuean Bi, Yuhan Shen, Yuhao Yang, Yujiang Li, Yunan Liu, Yunqing Wang, Yuntao Li, Yurong Wu, Yutao Zhang, Yuxi Duan, Yuxuan Zhang, Zezhen Liu, Zhengtao Jiang, Zhenhe Yan, Zheyu Zhang, Zhixiang Wei, Zhuo Chen, Zhuoer Feng, Zijun Yao, Ziwei Chai, Ziyuan Wang, Zuzhou Zhang, Bin Xu, Minlie Huang, Hongning Wang, Juanzi Li, Yuxiao Dong, Jie Tang",
-      "translated_title": "GLM-5：从氛围编程到智能体工程",
+      "translated_title": "GLM-5：从氛围编码到智能体工程",
       "journal_name": "",
       "journal_issue": "",
       "published": "2026-02-17",
@@ -107,72 +75,6 @@
       "arxiv_url": "https://arxiv.org/abs/2512.06609v3"
     },
     {
-      "arxiv_id": "2512.05905",
-      "title": "SCAIL: Towards Studio-Grade Character Animation via In-Context Learning of 3D-Consistent Pose Representations",
-      "authors": "Wenhao Yan, Sheng Ye, Zhuoyi Yang, Jiayan Teng, ZhenHui Dong, Kairui Wen, Xiaotao Gu, Yong-Jin Liu, Jie Tang",
-      "translated_title": "SCAIL：通过3D一致性姿态表示的上下文学习实现影视级角色动画",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-12-05",
-      "pdf_url": "https://arxiv.org/pdf/2512.05905v3",
-      "arxiv_url": "https://arxiv.org/abs/2512.05905v3"
-    },
-    {
-      "arxiv_id": "2512.05394",
-      "title": "Delving into Latent Spectral Biasing of Video VAEs for Superior Diffusability",
-      "authors": "Shizhan Liu, Xinran Deng, Zhuoyi Yang, Jiayan Teng, Xiaotao Gu, Jie Tang",
-      "translated_title": "深入探究视频VAE的潜在频谱偏置以提升扩散生成能力",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-12-05",
-      "pdf_url": "https://arxiv.org/pdf/2512.05394v1",
-      "arxiv_url": "https://arxiv.org/abs/2512.05394v1"
-    },
-    {
-      "arxiv_id": "2511.08195",
-      "title": "UI2Code^N: UI-to-Code Generation as Interactive Visual Optimization",
-      "authors": "Zhen Yang, Wenyi Hong, Mingde Xu, Xinyue Fan, Weihan Wang, Jiale Cheng, Xiaotao Gu, Jie Tang",
-      "translated_title": "UI2Code^N：将UI转代码生成作为交互式视觉优化问题",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-11-11",
-      "pdf_url": "https://arxiv.org/pdf/2511.08195v4",
-      "arxiv_url": "https://arxiv.org/abs/2511.08195v4"
-    },
-    {
-      "arxiv_id": "2511.06251",
-      "title": "WebVIA: A Web-based Vision-Language Agentic Framework for Interactive and Verifiable UI-to-Code Generation",
-      "authors": "Mingde Xu, Zhen Yang, Wenyi Hong, Lihang Pan, Xinyue Fan, Yan Wang, Xiaotao Gu, Bin Xu, Jie Tang",
-      "translated_title": "WebVIA：基于Web的视觉语言智能体框架用于交互式可验证的UI转代码生成",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-11-09",
-      "pdf_url": "https://arxiv.org/pdf/2511.06251v1",
-      "arxiv_url": "https://arxiv.org/abs/2511.06251v1"
-    },
-    {
-      "arxiv_id": "2510.26491",
-      "title": "Data-Efficient RLVR via Off-Policy Influence Guidance",
-      "authors": "Erle Zhu, Dazhi Jiang, Yuan Wang, Xujun Li, Jiale Cheng, Yuxian Gu, Yilin Niu, Aohan Zeng, Jie Tang, Minlie Huang, Hongning Wang",
-      "translated_title": "通过离策略影响力引导实现数据高效的RLVR",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-10-30",
-      "pdf_url": "https://arxiv.org/pdf/2510.26491v2",
-      "arxiv_url": "https://arxiv.org/abs/2510.26491v2"
-    },
-    {
-      "arxiv_id": "2510.18573",
-      "title": "Kaleido: Open-Sourced Multi-Subject Reference Video Generation Model",
-      "authors": "Zhenxing Zhang, Jiayan Teng, Zhuoyi Yang, Tiankun Cao, Cheng Wang, Xiaotao Gu, Jie Tang, Dan Guo, Meng Wang",
-      "translated_title": "Kaleido：开源多主体参考视频生成模型",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-10-21",
-      "pdf_url": "https://arxiv.org/pdf/2510.18573v2",
-      "arxiv_url": "https://arxiv.org/abs/2510.18573v2"
-    },
-    {
       "arxiv_id": "2510.17800",
       "title": "Glyph: Scaling Context Windows via Visual-Text Compression",
       "authors": "Jiale Cheng, Yusen Liu, Xinyu Zhang, Yulin Fei, Wenyi Hong, Ruiliang Lyu, Weihan Wang, Zhe Su, Xiaotao Gu, Xiao Liu, Yushi Bai, Jie Tang, Hongning Wang, Minlie Huang",
@@ -193,17 +95,6 @@
       "published": "2025-10-05",
       "pdf_url": "https://arxiv.org/pdf/2510.04206v1",
       "arxiv_url": "https://arxiv.org/abs/2510.04206v1"
-    },
-    {
-      "arxiv_id": "2509.10446",
-      "title": "DeepDive: Advancing Deep Search Agents with Knowledge Graphs and Multi-Turn RL",
-      "authors": "Rui Lu, Zhenyu Hou, Zihan Wang, Hanchen Zhang, Xiao Liu, Yujiang Li, Shi Feng, Jie Tang, Yuxiao Dong",
-      "translated_title": "DeepDive：结合知识图谱与多轮强化学习推进深度搜索智能体",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-09-12",
-      "pdf_url": "https://arxiv.org/pdf/2509.10446v2",
-      "arxiv_url": "https://arxiv.org/abs/2509.10446v2"
     },
     {
       "arxiv_id": "2508.14040",
@@ -231,7 +122,7 @@
       "arxiv_id": "2507.01006",
       "title": "GLM-4.5V and GLM-4.1V-Thinking: Towards Versatile Multimodal Reasoning with Scalable Reinforcement Learning",
       "authors": "GLM-V Team, :, Wenyi Hong, Wenmeng Yu, Xiaotao Gu, Guo Wang, Guobing Gan, Haomiao Tang, Jiale Cheng, Ji Qi, Junhui Ji, Lihang Pan, Shuaiqi Duan, Weihan Wang, Yan Wang, Yean Cheng, Zehai He, Zhe Su, Zhen Yang, Ziyang Pan, Aohan Zeng, Baoxu Wang, Bin Chen, Boyan Shi, Changyu Pang, Chenhui Zhang, Da Yin, Fan Yang, Guoqing Chen, Haochen Li, Jiale Zhu, Jiali Chen, Jiaxing Xu, Jiazheng Xu, Jing Chen, Jinghao Lin, Jinhao Chen, Jinjiang Wang, Junjie Chen, Leqi Lei, Letian Gong, Leyi Pan, Mingdao Liu, Mingde Xu, Mingzhi Zhang, Qinkai Zheng, Ruiliang Lyu, Shangqin Tu, Sheng Yang, Shengbiao Meng, Shi Zhong, Shiyu Huang, Shuyuan Zhao, Siyan Xue, Tianshu Zhang, Tianwei Luo, Tianxiang Hao, Tianyu Tong, Wei Jia, Wenkai Li, Xiao Liu, Xiaohan Zhang, Xin Lyu, Xinyu Zhang, Xinyue Fan, Xuancheng Huang, Yadong Xue, Yanfeng Wang, Yanling Wang, Yanzi Wang, Yifan An, Yifan Du, Yiheng Huang, Yilin Niu, Yiming Shi, Yu Wang, Yuan Wang, Yuanchang Yue, Yuchen Li, Yusen Liu, Yutao Zhang, Yuting Wang, Yuxuan Zhang, Zhao Xue, Zhengxiao Du, Zhenyu Hou, Zihan Wang, Peng Zhang, Debing Liu, Bin Xu, Juanzi Li, Minlie Huang, Yuxiao Dong, Jie Tang",
-      "translated_title": "GLM-4.5V与GLM-4.1V-Thinking：通过可扩展强化学习实现通用多模态推理",
+      "translated_title": "GLM-4.5V 与 GLM-4.1V-Thinking：通过可扩展强化学习迈向通用多模态推理",
       "journal_name": "",
       "journal_issue": "",
       "published": "2025-07-01",
@@ -239,70 +130,15 @@
       "arxiv_url": "https://arxiv.org/abs/2507.01006v6"
     },
     {
-      "arxiv_id": "2504.19298",
-      "title": "AndroidGen: Building an Android Language Agent under Data Scarcity",
-      "authors": "Hanyu Lai, Junjie Gao, Xiao Liu, Yifan Xu, Shudan Zhang, Yuxiao Dong, Jie Tang",
-      "translated_title": "AndroidGen：在数据稀缺条件下构建Android语言智能体",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-04-27",
-      "pdf_url": "https://arxiv.org/pdf/2504.19298v1",
-      "arxiv_url": "https://arxiv.org/abs/2504.19298v1"
-    },
-    {
       "arxiv_id": "2503.20491",
       "title": "VPO: Aligning Text-to-Video Generation Models with Prompt Optimization",
       "authors": "Jiale Cheng, Ruiliang Lyu, Xiaotao Gu, Xiao Liu, Jiazheng Xu, Yida Lu, Jiayan Teng, Zhuoyi Yang, Yuxiao Dong, Jie Tang, Hongning Wang, Minlie Huang",
-      "translated_title": "VPO：通过提示优化对齐文本到视频生成模型",
+      "translated_title": "VPO：通过提示词优化对齐文本到视频生成模型",
       "journal_name": "",
       "journal_issue": "",
       "published": "2025-03-26",
       "pdf_url": "https://arxiv.org/pdf/2503.20491v2",
       "arxiv_url": "https://arxiv.org/abs/2503.20491v2"
-    },
-    {
-      "arxiv_id": "2503.10105",
-      "title": "StepMathAgent: A Step-Wise Agent for Evaluating Mathematical Processes through Tree-of-Error",
-      "authors": "Shu-Xun Yang, Cunxiang Wang, Yidong Wang, Xiaotao Gu, Minlie Huang, Jie Tang",
-      "translated_title": "StepMathAgent：基于错误树逐步评估数学过程的智能体",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-03-13",
-      "pdf_url": "https://arxiv.org/pdf/2503.10105v1",
-      "arxiv_url": "https://arxiv.org/abs/2503.10105v1"
-    },
-    {
-      "arxiv_id": "2502.16971",
-      "title": "LongSafety: Evaluating Long-Context Safety of Large Language Models",
-      "authors": "Yida Lu, Jiale Cheng, Zhexin Zhang, Shiyao Cui, Cunxiang Wang, Xiaotao Gu, Yuxiao Dong, Jie Tang, Hongning Wang, Minlie Huang",
-      "translated_title": "LongSafety：评估大语言模型的长上下文安全性",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-02-24",
-      "pdf_url": "https://arxiv.org/pdf/2502.16971v1",
-      "arxiv_url": "https://arxiv.org/abs/2502.16971v1"
-    },
-    {
-      "arxiv_id": "2502.13031",
-      "title": "HPSS: Heuristic Prompting Strategy Search for LLM Evaluators",
-      "authors": "Bosi Wen, Pei Ke, Yufei Sun, Cunxiang Wang, Xiaotao Gu, Jinfeng Zhou, Jie Tang, Hongning Wang, Minlie Huang",
-      "translated_title": "HPSS：面向LLM评估器的启发式提示策略搜索",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-02-18",
-      "pdf_url": "https://arxiv.org/pdf/2502.13031v2",
-      "arxiv_url": "https://arxiv.org/abs/2502.13031v2"
-    },
-    {
-      "arxiv_id": "2501.02955",
-      "title": "MotionBench: Benchmarking and Improving Fine-grained Video Motion Understanding for Vision Language Models",
-      "authors": "Wenyi Hong, Yean Cheng, Zhuoyi Yang, Weihan Wang, Lefan Wang, Xiaotao Gu, Shiyu Huang, Yuxiao Dong, Jie Tang",
-      "translated_title": "MotionBench：面向视觉语言模型的细粒度视频运动理解基准测试与改进",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2025-01-06",
-      "pdf_url": "https://arxiv.org/pdf/2501.02955v2",
-      "arxiv_url": "https://arxiv.org/abs/2501.02955v2"
     },
     {
       "arxiv_id": "2501.01045",
@@ -330,7 +166,7 @@
       "arxiv_id": "2412.11605",
       "title": "SPaR: Self-Play with Tree-Search Refinement to Improve Instruction-Following in Large Language Models",
       "authors": "Jiale Cheng, Xiao Liu, Cunxiang Wang, Xiaotao Gu, Yida Lu, Dan Zhang, Yuxiao Dong, Jie Tang, Hongning Wang, Minlie Huang",
-      "translated_title": "SPaR：基于树搜索精炼的自我博弈以提升大语言模型的指令遵循能力",
+      "translated_title": "SPaR：通过树搜索精炼的自我博弈以提升大语言模型的指令遵循能力",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-12-16",
@@ -341,7 +177,7 @@
       "arxiv_id": "2412.06000",
       "title": "Does RLHF Scale? Exploring the Impacts From Data, Model, and Method",
       "authors": "Zhenyu Hou, Pengfan Du, Yilin Niu, Zhengxiao Du, Aohan Zeng, Xiao Liu, Minlie Huang, Hongning Wang, Jie Tang, Yuxiao Dong",
-      "translated_title": "RLHF能扩展吗？探索数据、模型和方法的影响",
+      "translated_title": "RLHF 能否扩展？探索数据、模型和方法的影响",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-12-08",
@@ -360,21 +196,10 @@
       "arxiv_url": "https://arxiv.org/abs/2412.02612v1"
     },
     {
-      "arxiv_id": "2411.17607",
-      "title": "Scaling Speech-Text Pre-training with Synthetic Interleaved Data",
-      "authors": "Aohan Zeng, Zhengxiao Du, Mingdao Liu, Lei Zhang, Shengmin Jiang, Yuxiao Dong, Jie Tang",
-      "translated_title": "利用合成交错数据扩展语音-文本预训练",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-11-26",
-      "pdf_url": "https://arxiv.org/pdf/2411.17607v2",
-      "arxiv_url": "https://arxiv.org/abs/2411.17607v2"
-    },
-    {
       "arxiv_id": "2411.02337",
       "title": "WebRL: Training LLM Web Agents via Self-Evolving Online Curriculum Reinforcement Learning",
       "authors": "Zehan Qi, Xiao Liu, Iat Long Iong, Hanyu Lai, Xueqiao Sun, Wenyi Zhao, Yu Yang, Xinyue Yang, Jiadai Sun, Shuntian Yao, Tianjie Zhang, Wei Xu, Jie Tang, Yuxiao Dong",
-      "translated_title": "WebRL：通过自进化在线课程强化学习训练LLM网页智能体",
+      "translated_title": "WebRL：通过自进化在线课程强化学习训练大语言模型网络智能体",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-11-04",
@@ -385,7 +210,7 @@
       "arxiv_id": "2411.01602",
       "title": "DreamPolish: Domain Score Distillation With Progressive Geometry Generation",
       "authors": "Yean Cheng, Ziqi Cai, Ming Ding, Wendi Zheng, Shiyu Huang, Yuxiao Dong, Jie Tang, Boxin Shi",
-      "translated_title": "DreamPolish：基于渐进式几何生成的域分数蒸馏",
+      "translated_title": "DreamPolish：结合渐进式几何生成的域得分蒸馏",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-11-03",
@@ -393,21 +218,10 @@
       "arxiv_url": "https://arxiv.org/abs/2411.01602v1"
     },
     {
-      "arxiv_id": "2410.24024",
-      "title": "AndroidLab: Training and Systematic Benchmarking of Android Autonomous Agents",
-      "authors": "Yifan Xu, Xiao Liu, Xueqiao Sun, Siyi Cheng, Hao Yu, Hanyu Lai, Shudan Zhang, Dan Zhang, Jie Tang, Yuxiao Dong",
-      "translated_title": "AndroidLab：Android自主智能体的训练与系统化基准测试",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-10-31",
-      "pdf_url": "https://arxiv.org/pdf/2410.24024v2",
-      "arxiv_url": "https://arxiv.org/abs/2410.24024v2"
-    },
-    {
       "arxiv_id": "2411.00820",
       "title": "AutoGLM: Autonomous Foundation Agents for GUIs",
       "authors": "Xiao Liu, Bo Qin, Dongzhu Liang, Guang Dong, Hanyu Lai, Hanchen Zhang, Hanlin Zhao, Iat Long Iong, Jiadai Sun, Jiaqi Wang, Junjie Gao, Junjun Shan, Kangning Liu, Shudan Zhang, Shuntian Yao, Siyi Cheng, Wentao Yao, Wenyi Zhao, Xinghan Liu, Xinyi Liu, Xinying Chen, Xinyue Yang, Yang Yang, Yifan Xu, Yu Yang, Yujia Wang, Yulin Xu, Zehan Qi, Yuxiao Dong, Jie Tang",
-      "translated_title": "AutoGLM：面向GUI的自主基础智能体",
+      "translated_title": "AutoGLM：面向图形用户界面的自主基础智能体",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-10-28",
@@ -429,7 +243,7 @@
       "arxiv_id": "2408.15778",
       "title": "LogicGame: Benchmarking Rule-Based Reasoning Abilities of Large Language Models",
       "authors": "Jiayi Gui, Yiming Liu, Jiale Cheng, Xiaotao Gu, Xiao Liu, Hongning Wang, Yuxiao Dong, Jie Tang, Minlie Huang",
-      "translated_title": "LogicGame：大语言模型基于规则推理能力的基准测试",
+      "translated_title": "LogicGame：大语言模型基于规则的推理能力基准测试",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-08-28",
@@ -451,23 +265,12 @@
       "arxiv_id": "2408.06072",
       "title": "CogVideoX: Text-to-Video Diffusion Models with An Expert Transformer",
       "authors": "Zhuoyi Yang, Jiayan Teng, Wendi Zheng, Ming Ding, Shiyu Huang, Jiazheng Xu, Yuanming Yang, Wenyi Hong, Xiaohan Zhang, Guanyu Feng, Da Yin, Yuxuan Zhang, Weihan Wang, Yean Cheng, Bin Xu, Xiaotao Gu, Yuxiao Dong, Jie Tang",
-      "translated_title": "CogVideoX：基于专家Transformer的文本到视频扩散模型",
+      "translated_title": "CogVideoX：基于专家 Transformer 的文本到视频扩散模型",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-08-12",
       "pdf_url": "https://arxiv.org/pdf/2408.06072v3",
       "arxiv_url": "https://arxiv.org/abs/2408.06072v3"
-    },
-    {
-      "arxiv_id": "2407.03978",
-      "title": "Benchmarking Complex Instruction-Following with Multiple Constraints Composition",
-      "authors": "Bosi Wen, Pei Ke, Xiaotao Gu, Lindong Wu, Hao Huang, Jinfeng Zhou, Wenchuang Li, Binxin Hu, Wendy Gao, Jiaxin Xu, Yiming Liu, Jie Tang, Hongning Wang, Minlie Huang",
-      "translated_title": "基于多约束组合的复杂指令跟随能力基准测试",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-07-04",
-      "pdf_url": "https://arxiv.org/pdf/2407.03978v3",
-      "arxiv_url": "https://arxiv.org/abs/2407.03978v3"
     },
     {
       "arxiv_id": "2406.16714",
@@ -484,23 +287,12 @@
       "arxiv_id": "2406.12793",
       "title": "ChatGLM: A Family of Large Language Models from GLM-130B to GLM-4 All Tools",
       "authors": "Team GLM, :, Aohan Zeng, Bin Xu, Bowen Wang, Chenhui Zhang, Da Yin, Dan Zhang, Diego Rojas, Guanyu Feng, Hanlin Zhao, Hanyu Lai, Hao Yu, Hongning Wang, Jiadai Sun, Jiajie Zhang, Jiale Cheng, Jiayi Gui, Jie Tang, Jing Zhang, Jingyu Sun, Juanzi Li, Lei Zhao, Lindong Wu, Lucen Zhong, Mingdao Liu, Minlie Huang, Peng Zhang, Qinkai Zheng, Rui Lu, Shuaiqi Duan, Shudan Zhang, Shulin Cao, Shuxun Yang, Weng Lam Tam, Wenyi Zhao, Xiao Liu, Xiao Xia, Xiaohan Zhang, Xiaotao Gu, Xin Lv, Xinghan Liu, Xinyi Liu, Xinyue Yang, Xixuan Song, Xunkai Zhang, Yifan An, Yifan Xu, Yilin Niu, Yuantao Yang, Yueyan Li, Yushi Bai, Yuxiao Dong, Zehan Qi, Zhaoyu Wang, Zhen Yang, Zhengxiao Du, Zhenyu Hou, Zihan Wang",
-      "translated_title": "ChatGLM：从GLM-130B到GLM-4 All Tools的大语言模型家族",
+      "translated_title": "ChatGLM：从 GLM-130B 到 GLM-4 All Tools 的大语言模型家族",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-06-18",
       "pdf_url": "https://arxiv.org/pdf/2406.12793v2",
       "arxiv_url": "https://arxiv.org/abs/2406.12793v2"
-    },
-    {
-      "arxiv_id": "2406.08035",
-      "title": "LVBench: An Extreme Long Video Understanding Benchmark",
-      "authors": "Weihan Wang, Zehai He, Wenyi Hong, Yean Cheng, Xiaohan Zhang, Ji Qi, Xiaotao Gu, Shiyu Huang, Bin Xu, Yuxiao Dong, Ming Ding, Jie Tang",
-      "translated_title": "LVBench：一个超长视频理解基准",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-06-12",
-      "pdf_url": "https://arxiv.org/pdf/2406.08035v3",
-      "arxiv_url": "https://arxiv.org/abs/2406.08035v3"
     },
     {
       "arxiv_id": "2405.04520",
@@ -512,17 +304,6 @@
       "published": "2024-05-07",
       "pdf_url": "https://arxiv.org/pdf/2405.04520v1",
       "arxiv_url": "https://arxiv.org/abs/2405.04520v1"
-    },
-    {
-      "arxiv_id": "2405.04312",
-      "title": "Inf-DiT: Upsampling Any-Resolution Image with Memory-Efficient Diffusion Transformer",
-      "authors": "Zhuoyi Yang, Heyang Jiang, Wenyi Hong, Jiayan Teng, Wendi Zheng, Yuxiao Dong, Ming Ding, Jie Tang",
-      "translated_title": "Inf-DiT：基于内存高效扩散Transformer的任意分辨率图像上采样",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-05-07",
-      "pdf_url": "https://arxiv.org/pdf/2405.04312v2",
-      "arxiv_url": "https://arxiv.org/abs/2405.04312v2"
     },
     {
       "arxiv_id": "2404.03648",
@@ -539,7 +320,7 @@
       "arxiv_id": "2404.02893",
       "title": "ChatGLM-Math: Improving Math Problem-Solving in Large Language Models with a Self-Critique Pipeline",
       "authors": "Yifan Xu, Xiao Liu, Xinghan Liu, Zhenyu Hou, Yueyan Li, Xiaohan Zhang, Zihan Wang, Aohan Zeng, Zhengxiao Du, Wenyi Zhao, Jie Tang, Yuxiao Dong",
-      "translated_title": "ChatGLM-Math：通过自我批判管线提升大语言模型的数学问题求解能力",
+      "translated_title": "ChatGLM-Math：通过自我批判流水线提升大语言模型的数学问题求解能力",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-04-03",
@@ -550,7 +331,7 @@
       "arxiv_id": "2404.00934",
       "title": "ChatGLM-RLHF: Practices of Aligning Large Language Models with Human Feedback",
       "authors": "Zhenyu Hou, Yilin Niu, Zhengxiao Du, Xiaohan Zhang, Xiao Liu, Aohan Zeng, Qinkai Zheng, Minlie Huang, Hongning Wang, Jie Tang, Yuxiao Dong",
-      "translated_title": "ChatGLM-RLHF：基于人类反馈对齐大语言模型的实践",
+      "translated_title": "ChatGLM-RLHF：使大语言模型与人类反馈对齐的实践",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-04-01",
@@ -558,32 +339,10 @@
       "arxiv_url": "https://arxiv.org/abs/2404.00934v2"
     },
     {
-      "arxiv_id": "2404.00604",
-      "title": "Extensive Self-Contrast Enables Feedback-Free Language Model Alignment",
-      "authors": "Xiao Liu, Xixuan Song, Yuxiao Dong, Jie Tang",
-      "translated_title": "广泛的自对比实现无反馈的大语言模型对齐",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-03-31",
-      "pdf_url": "https://arxiv.org/pdf/2404.00604v1",
-      "arxiv_url": "https://arxiv.org/abs/2404.00604v1"
-    },
-    {
-      "arxiv_id": "2403.15796",
-      "title": "Understanding Emergent Abilities of Language Models from the Loss Perspective",
-      "authors": "Zhengxiao Du, Aohan Zeng, Yuxiao Dong, Jie Tang",
-      "translated_title": "从损失视角理解语言模型的涌现能力",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-03-23",
-      "pdf_url": "https://arxiv.org/pdf/2403.15796v3",
-      "arxiv_url": "https://arxiv.org/abs/2403.15796v3"
-    },
-    {
       "arxiv_id": "2403.05121",
       "title": "CogView3: Finer and Faster Text-to-Image Generation via Relay Diffusion",
       "authors": "Wendi Zheng, Jiayan Teng, Zhuoyi Yang, Weihan Wang, Jidong Chen, Xiaotao Gu, Yuxiao Dong, Ming Ding, Jie Tang",
-      "translated_title": "CogView3：通过中继扩散实现更精细更快速的文本到图像生成",
+      "translated_title": "CogView3：通过中继扩散实现更精细、更快速的文本到图像生成",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-03-08",
@@ -591,21 +350,10 @@
       "arxiv_url": "https://arxiv.org/abs/2403.05121v1"
     },
     {
-      "arxiv_id": "2402.14672",
-      "title": "Middleware for LLMs: Tools Are Instrumental for Language Agents in Complex Environments",
-      "authors": "Yu Gu, Yiheng Shu, Hao Yu, Xiao Liu, Yuxiao Dong, Jie Tang, Jayanth Srinivasa, Hugo Latapie, Yu Su",
-      "translated_title": "面向大语言模型的中间件：工具是复杂环境中语言智能体的关键",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2024-02-22",
-      "pdf_url": "https://arxiv.org/pdf/2402.14672v2",
-      "arxiv_url": "https://arxiv.org/abs/2402.14672v2"
-    },
-    {
       "arxiv_id": "2401.06761",
       "title": "APAR: LLMs Can Do Auto-Parallel Auto-Regressive Decoding",
       "authors": "Mingdao Liu, Aohan Zeng, Bowen Wang, Peng Zhang, Jie Tang, Yuxiao Dong",
-      "translated_title": "APAR：大语言模型能够实现自动并行自回归解码",
+      "translated_title": "APAR：大语言模型能够进行自动并行自回归解码",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-01-12",
@@ -616,7 +364,7 @@
       "arxiv_id": "2401.06199",
       "title": "xTrimoPGLM: Unified 100B-Scale Pre-trained Transformer for Deciphering the Language of Protein",
       "authors": "Bo Chen, Xingyi Cheng, Pan Li, Yangli-ao Geng, Jing Gong, Shen Li, Zhilei Bei, Xu Tan, Boyan Wang, Xin Zeng, Chiming Liu, Aohan Zeng, Yuxiao Dong, Jie Tang, Le Song",
-      "translated_title": "xTrimoPGLM：统一百亿规模预训练Transformer解码蛋白质语言",
+      "translated_title": "xTrimoPGLM：用于破译蛋白质语言的统一千亿级预训练变换器",
       "journal_name": "",
       "journal_issue": "",
       "published": "2024-01-11",
@@ -638,7 +386,7 @@
       "arxiv_id": "2311.18702",
       "title": "CritiqueLLM: Towards an Informative Critique Generation Model for Evaluation of Large Language Model Generation",
       "authors": "Pei Ke, Bosi Wen, Zhuoer Feng, Xiao Liu, Xuanyu Lei, Jiale Cheng, Shengyuan Wang, Aohan Zeng, Yuxiao Dong, Hongning Wang, Jie Tang, Minlie Huang",
-      "translated_title": "CritiqueLLM：面向大语言模型生成评估的具备信息量的批评生成模型",
+      "translated_title": "CritiqueLLM：面向大语言模型生成评估的信息化批评生成模型",
       "journal_name": "",
       "journal_issue": "",
       "published": "2023-11-30",
@@ -646,21 +394,10 @@
       "arxiv_url": "https://arxiv.org/abs/2311.18702v2"
     },
     {
-      "arxiv_id": "2311.04155",
-      "title": "Black-Box Prompt Optimization: Aligning Large Language Models without Model Training",
-      "authors": "Jiale Cheng, Xiao Liu, Kehan Zheng, Pei Ke, Hongning Wang, Yuxiao Dong, Jie Tang, Minlie Huang",
-      "translated_title": "黑盒提示优化：无需模型训练实现大语言模型对齐",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2023-11-07",
-      "pdf_url": "https://arxiv.org/pdf/2311.04155v3",
-      "arxiv_url": "https://arxiv.org/abs/2311.04155v3"
-    },
-    {
       "arxiv_id": "2310.12823",
       "title": "AgentTuning: Enabling Generalized Agent Abilities for LLMs",
       "authors": "Aohan Zeng, Mingdao Liu, Rui Lu, Bowen Wang, Xiao Liu, Yuxiao Dong, Jie Tang",
-      "translated_title": "AgentTuning：为大语言模型赋予通用智能体能力",
+      "translated_title": "AgentTuning：为大型语言模型赋予通用智能体能力",
       "journal_name": "",
       "journal_issue": "",
       "published": "2023-10-19",
@@ -668,21 +405,10 @@
       "arxiv_url": "https://arxiv.org/abs/2310.12823v2"
     },
     {
-      "arxiv_id": "2309.07045",
-      "title": "SafetyBench: Evaluating the Safety of Large Language Models",
-      "authors": "Zhexin Zhang, Leqi Lei, Lindong Wu, Rui Sun, Yongkang Huang, Chong Long, Xiao Liu, Xuanyu Lei, Jie Tang, Minlie Huang",
-      "translated_title": "SafetyBench：评估大语言模型的安全性",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2023-09-13",
-      "pdf_url": "https://arxiv.org/pdf/2309.07045v2",
-      "arxiv_url": "https://arxiv.org/abs/2309.07045v2"
-    },
-    {
       "arxiv_id": "2309.03350",
       "title": "Relay Diffusion: Unifying diffusion process across resolutions for image synthesis",
       "authors": "Jiayan Teng, Wendi Zheng, Ming Ding, Wenyi Hong, Jianqiao Wangni, Zhuoyi Yang, Jie Tang",
-      "translated_title": "Relay Diffusion：统一跨分辨率的扩散过程用于图像合成",
+      "translated_title": "Relay Diffusion：统一图像合成中不同分辨率的扩散过程",
       "journal_name": "",
       "journal_issue": "",
       "published": "2023-09-04",
@@ -704,7 +430,7 @@
       "arxiv_id": "2308.03688",
       "title": "AgentBench: Evaluating LLMs as Agents",
       "authors": "Xiao Liu, Hao Yu, Hanchen Zhang, Yifan Xu, Xuanyu Lei, Hanyu Lai, Yu Gu, Hangliang Ding, Kaiwen Men, Kejuan Yang, Shudan Zhang, Xiang Deng, Aohan Zeng, Zhengxiao Du, Chenhui Zhang, Sheng Shen, Tianjun Zhang, Yu Su, Huan Sun, Minlie Huang, Yuxiao Dong, Jie Tang",
-      "translated_title": "AgentBench：将大语言模型作为智能体进行评估",
+      "translated_title": "AgentBench：将大型语言模型作为智能体进行评估",
       "journal_name": "",
       "journal_issue": "",
       "published": "2023-08-07",
@@ -715,23 +441,12 @@
       "arxiv_id": "2306.07906",
       "title": "WebGLM: Towards An Efficient Web-Enhanced Question Answering System with Human Preferences",
       "authors": "Xiao Liu, Hanyu Lai, Hao Yu, Yifan Xu, Aohan Zeng, Zhengxiao Du, Peng Zhang, Yuxiao Dong, Jie Tang",
-      "translated_title": "WebGLM：基于人类偏好构建高效的Web增强问答系统",
+      "translated_title": "WebGLM：迈向基于人类偏好的高效网络增强问答系统",
       "journal_name": "",
       "journal_issue": "",
       "published": "2023-06-13",
       "pdf_url": "https://arxiv.org/pdf/2306.07906v1",
       "arxiv_url": "https://arxiv.org/abs/2306.07906v1"
-    },
-    {
-      "arxiv_id": "2306.06629",
-      "title": "GKD: A General Knowledge Distillation Framework for Large-scale Pre-trained Language Model",
-      "authors": "Shicheng Tan, Weng Lam Tam, Yuanchun Wang, Wenwen Gong, Yang Yang, Hongyin Tang, Keqing He, Jiahao Liu, Jingang Wang, Shu Zhao, Peng Zhang, Jie Tang",
-      "translated_title": "GKD：面向大规模预训练语言模型的通用知识蒸馏框架",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2023-06-11",
-      "pdf_url": "https://arxiv.org/pdf/2306.06629v1",
-      "arxiv_url": "https://arxiv.org/abs/2306.06629v1"
     },
     {
       "arxiv_id": "2306.06625",
@@ -748,34 +463,12 @@
       "arxiv_id": "2305.15262",
       "title": "Revisiting Parallel Context Windows: A Frustratingly Simple Alternative and Chain-of-Thought Deterioration",
       "authors": "Kejuan Yang, Xiao Liu, Kaiwen Men, Aohan Zeng, Yuxiao Dong, Jie Tang",
-      "translated_title": "重审并行上下文窗口：一种令人沮丧的简单替代方案与思维链退化",
+      "translated_title": "重新审视并行上下文窗口：一种令人沮丧的简单替代方案与思维链退化问题",
       "journal_name": "",
       "journal_issue": "",
       "published": "2023-05-24",
       "pdf_url": "https://arxiv.org/pdf/2305.15262v1",
       "arxiv_url": "https://arxiv.org/abs/2305.15262v1"
-    },
-    {
-      "arxiv_id": "2304.05977",
-      "title": "ImageReward: Learning and Evaluating Human Preferences for Text-to-Image Generation",
-      "authors": "Jiazheng Xu, Xiao Liu, Yuchen Wu, Yuxuan Tong, Qinkai Li, Ming Ding, Jie Tang, Yuxiao Dong",
-      "translated_title": "ImageReward：学习与评估文生图像的人类偏好",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2023-04-12",
-      "pdf_url": "https://arxiv.org/pdf/2304.05977v4",
-      "arxiv_url": "https://arxiv.org/abs/2304.05977v4"
-    },
-    {
-      "arxiv_id": "2304.04779",
-      "title": "GraphMAE2: A Decoding-Enhanced Masked Self-Supervised Graph Learner",
-      "authors": "Zhenyu Hou, Yufei He, Yukuo Cen, Xiao Liu, Yuxiao Dong, Evgeny Kharlamov, Jie Tang",
-      "translated_title": "GraphMAE2：解码增强的掩码自监督图学习器",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2023-04-10",
-      "pdf_url": "https://arxiv.org/pdf/2304.04779v1",
-      "arxiv_url": "https://arxiv.org/abs/2304.04779v1"
     },
     {
       "arxiv_id": "2210.02414",
@@ -789,32 +482,10 @@
       "arxiv_url": "https://arxiv.org/abs/2210.02414v2"
     },
     {
-      "arxiv_id": "2208.07638",
-      "title": "Mask and Reason: Pre-Training Knowledge Graph Transformers for Complex Logical Queries",
-      "authors": "Xiao Liu, Shiyu Zhao, Kai Su, Yukuo Cen, Jiezhong Qiu, Mengdi Zhang, Wei Wu, Yuxiao Dong, Jie Tang",
-      "translated_title": "掩码与推理：面向复杂逻辑查询预训练知识图谱Transformer",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2022-08-16",
-      "pdf_url": "https://arxiv.org/pdf/2208.07638v1",
-      "arxiv_url": "https://arxiv.org/abs/2208.07638v1"
-    },
-    {
-      "arxiv_id": "2207.07087",
-      "title": "Parameter-Efficient Prompt Tuning Makes Generalized and Calibrated Neural Text Retrievers",
-      "authors": "Weng Lam Tam, Xiao Liu, Kaixuan Ji, Lilong Xue, Xingjian Zhang, Yuxiao Dong, Jiahua Liu, Maodi Hu, Jie Tang",
-      "translated_title": "参数高效的提示微调构建泛化且校准的神经文本检索器",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2022-07-14",
-      "pdf_url": "https://arxiv.org/pdf/2207.07087v1",
-      "arxiv_url": "https://arxiv.org/abs/2207.07087v1"
-    },
-    {
       "arxiv_id": "2205.15868",
       "title": "CogVideo: Large-scale Pretraining for Text-to-Video Generation via Transformers",
       "authors": "Wenyi Hong, Ming Ding, Wendi Zheng, Xinghan Liu, Jie Tang",
-      "translated_title": "CogVideo：基于Transformer大规模预训练的文生视频模型",
+      "translated_title": "CogVideo：基于Transformer的大规模文本到视频生成预训练",
       "journal_name": "",
       "journal_issue": "",
       "published": "2022-05-29",
@@ -822,103 +493,15 @@
       "arxiv_url": "https://arxiv.org/abs/2205.15868v1"
     },
     {
-      "arxiv_id": "2205.10803",
-      "title": "GraphMAE: Self-Supervised Masked Graph Autoencoders",
-      "authors": "Zhenyu Hou, Xiao Liu, Yukuo Cen, Yuxiao Dong, Hongxia Yang, Chunjie Wang, Jie Tang",
-      "translated_title": "GraphMAE：自监督掩码图自编码器",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2022-05-22",
-      "pdf_url": "https://arxiv.org/pdf/2205.10803v3",
-      "arxiv_url": "https://arxiv.org/abs/2205.10803v3"
-    },
-    {
-      "arxiv_id": "2205.10475",
-      "title": "DeepStruct: Pretraining of Language Models for Structure Prediction",
-      "authors": "Chenguang Wang, Xiao Liu, Zui Chen, Haoyun Hong, Jie Tang, Dawn Song",
-      "translated_title": "DeepStruct：面向结构预测的语言模型预训练",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2022-05-21",
-      "pdf_url": "https://arxiv.org/pdf/2205.10475v2",
-      "arxiv_url": "https://arxiv.org/abs/2205.10475v2"
-    },
-    {
       "arxiv_id": "2204.14217",
       "title": "CogView2: Faster and Better Text-to-Image Generation via Hierarchical Transformers",
       "authors": "Ming Ding, Wendi Zheng, Wenyi Hong, Jie Tang",
-      "translated_title": "CogView2：基于层次化变换器的更快更好的文本到图像生成",
+      "translated_title": "CogView2：通过分层变换器实现更快更好的文本到图像生成",
       "journal_name": "",
       "journal_issue": "",
       "published": "2022-04-28",
       "pdf_url": "https://arxiv.org/pdf/2204.14217v2",
       "arxiv_url": "https://arxiv.org/abs/2204.14217v2"
-    },
-    {
-      "arxiv_id": "2203.01044",
-      "title": "SelfKG: Self-Supervised Entity Alignment in Knowledge Graphs",
-      "authors": "Xiao Liu, Haoyun Hong, Xinghao Wang, Zeyi Chen, Evgeny Kharlamov, Yuxiao Dong, Jie Tang",
-      "translated_title": "SelfKG：知识图谱中的自监督实体对齐",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2022-03-02",
-      "pdf_url": "https://arxiv.org/pdf/2203.01044v1",
-      "arxiv_url": "https://arxiv.org/abs/2203.01044v1"
-    },
-    {
-      "arxiv_id": "2110.07602",
-      "title": "P-Tuning v2: Prompt Tuning Can Be Comparable to Fine-tuning Universally Across Scales and Tasks",
-      "authors": "Xiao Liu, Kaixuan Ji, Yicheng Fu, Weng Lam Tam, Zhengxiao Du, Zhilin Yang, Jie Tang",
-      "translated_title": "P-Tuning v2：提示微调在跨尺度和任务上可媲美全参数微调",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-10-14",
-      "pdf_url": "https://arxiv.org/pdf/2110.07602v3",
-      "arxiv_url": "https://arxiv.org/abs/2110.07602v3"
-    },
-    {
-      "arxiv_id": "2109.11171",
-      "title": "Zero-Shot Information Extraction as a Unified Text-to-Triple Translation",
-      "authors": "Chenguang Wang, Xiao Liu, Zui Chen, Haoyun Hong, Jie Tang, Dawn Song",
-      "translated_title": "零样本信息抽取作为统一的文本到三元组翻译",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-09-23",
-      "pdf_url": "https://arxiv.org/pdf/2109.11171v1",
-      "arxiv_url": "https://arxiv.org/abs/2109.11171v1"
-    },
-    {
-      "arxiv_id": "2108.07516",
-      "title": "Graph Contrastive Learning for Anomaly Detection",
-      "authors": "Bo Chen, Jing Zhang, Xiaokang Zhang, Yuxiao Dong, Jian Song, Peng Zhang, Kaibo Xu, Evgeny Kharlamov, Jie Tang",
-      "translated_title": "用于异常检测的图对比学习",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-08-17",
-      "pdf_url": "https://arxiv.org/pdf/2108.07516v3",
-      "arxiv_url": "https://arxiv.org/abs/2108.07516v3"
-    },
-    {
-      "arxiv_id": "2106.09395",
-      "title": "A Self-supervised Method for Entity Alignment",
-      "authors": "Xiao Liu, Haoyun Hong, Xinghao Wang, Zeyi Chen, Evgeny Kharlamov, Yuxiao Dong, Jie Tang",
-      "translated_title": "一种用于实体对齐的自监督方法",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-06-17",
-      "pdf_url": "https://arxiv.org/pdf/2106.09395v2",
-      "arxiv_url": "https://arxiv.org/abs/2106.09395v2"
-    },
-    {
-      "arxiv_id": "2106.07139",
-      "title": "Pre-Trained Models: Past, Present and Future",
-      "authors": "Xu Han, Zhengyan Zhang, Ning Ding, Yuxian Gu, Xiao Liu, Yuqi Huo, Jiezhong Qiu, Yuan Yao, Ao Zhang, Liang Zhang, Wentao Han, Minlie Huang, Qin Jin, Yanyan Lan, Yang Liu, Zhiyuan Liu, Zhiwu Lu, Xipeng Qiu, Ruihua Song, Jie Tang, Ji-Rong Wen, Jinhui Yuan, Wayne Xin Zhao, Jun Zhu",
-      "translated_title": "预训练模型：过去、现在与未来",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-06-14",
-      "pdf_url": "https://arxiv.org/pdf/2106.07139v3",
-      "arxiv_url": "https://arxiv.org/abs/2106.07139v3"
     },
     {
       "arxiv_id": "2105.13290",
@@ -932,28 +515,6 @@
       "arxiv_url": "https://arxiv.org/abs/2105.13290v3"
     },
     {
-      "arxiv_id": "2103.13262",
-      "title": "FastMoE: A Fast Mixture-of-Expert Training System",
-      "authors": "Jiaao He, Jiezhong Qiu, Aohan Zeng, Zhilin Yang, Jidong Zhai, Jie Tang",
-      "translated_title": "FastMoE：快速的混合专家训练系统",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-03-24",
-      "pdf_url": "https://arxiv.org/pdf/2103.13262v1",
-      "arxiv_url": "https://arxiv.org/abs/2103.13262v1"
-    },
-    {
-      "arxiv_id": "2103.10385",
-      "title": "GPT Understands, Too",
-      "authors": "Xiao Liu, Yanan Zheng, Zhengxiao Du, Ming Ding, Yujie Qian, Zhilin Yang, Jie Tang",
-      "translated_title": "GPT也能理解",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-03-18",
-      "pdf_url": "https://arxiv.org/pdf/2103.10385v2",
-      "arxiv_url": "https://arxiv.org/abs/2103.10385v2"
-    },
-    {
       "arxiv_id": "2103.10360",
       "title": "GLM: General Language Model Pretraining with Autoregressive Blank Infilling",
       "authors": "Zhengxiao Du, Yujie Qian, Xiao Liu, Ming Ding, Jiezhong Qiu, Zhilin Yang, Jie Tang",
@@ -963,17 +524,6 @@
       "published": "2021-03-18",
       "pdf_url": "https://arxiv.org/pdf/2103.10360v2",
       "arxiv_url": "https://arxiv.org/abs/2103.10360v2"
-    },
-    {
-      "arxiv_id": "2103.02930",
-      "title": "Understanding WeChat User Preferences and \"Wow\" Diffusion",
-      "authors": "Fanjin Zhang, Jie Tang, Xueyi Liu, Zhenyu Hou, Yuxiao Dong, Jing Zhang, Xiao Liu, Ruobing Xie, Kai Zhuang, Xu Zhang, Leyu Lin, Philip S. Yu",
-      "translated_title": "理解微信用户偏好与“在看”扩散机制",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2021-03-04",
-      "pdf_url": "https://arxiv.org/pdf/2103.02930v1",
-      "arxiv_url": "https://arxiv.org/abs/2103.02930v1"
     },
     {
       "arxiv_id": "2103.02410",
@@ -996,28 +546,6 @@
       "published": "2021-03-01",
       "pdf_url": "https://arxiv.org/pdf/2103.00959v4",
       "arxiv_url": "https://arxiv.org/abs/2103.00959v4"
-    },
-    {
-      "arxiv_id": "2012.11336",
-      "title": "CODE: Contrastive Pre-training with Adversarial Fine-tuning for Zero-shot Expert Linking",
-      "authors": "Bo Chen, Jing Zhang, Xiaokang Zhang, Xiaobin Tang, Lingfan Cai, Hong Chen, Cuiping Li, Peng Zhang, Jie Tang",
-      "translated_title": "CODE：基于对抗微调的对比预训练实现零样本专家链接",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2020-12-14",
-      "pdf_url": "https://arxiv.org/pdf/2012.11336v2",
-      "arxiv_url": "https://arxiv.org/abs/2012.11336v2"
-    },
-    {
-      "arxiv_id": "2006.08218",
-      "title": "Self-supervised Learning: Generative or Contrastive",
-      "authors": "Xiao Liu, Fanjin Zhang, Zhenyu Hou, Zhaoyu Wang, Li Mian, Jing Zhang, Jie Tang",
-      "translated_title": "自监督学习：生成式还是对比式",
-      "journal_name": "",
-      "journal_issue": "",
-      "published": "2020-06-15",
-      "pdf_url": "https://arxiv.org/pdf/2006.08218v5",
-      "arxiv_url": "https://arxiv.org/abs/2006.08218v5"
     }
   ]
 }
