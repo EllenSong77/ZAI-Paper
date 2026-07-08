@@ -1,18 +1,14 @@
 {
   "summary": {
-    "queried_unique_papers": 691,
-    "arxiv_query_failures": [
-      "Peng Zhang",
-      "Xiaotao Gu",
-      "Xiao Liu"
-    ],
-    "candidate_count": 135,
+    "queried_unique_papers": 1741,
+    "arxiv_query_failures": [],
+    "candidate_count": 136,
     "automatic_include": 107,
     "probability_approved_by_llm": 2,
     "product_related": 37,
     "academic_output": 72,
     "final_count": 109,
-    "updated_at": "2026-07-08T03:04:33.476787+00:00"
+    "updated_at": "2026-07-08T04:02:37.198724+00:00"
   },
   "rows": [
     {
