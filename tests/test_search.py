@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+import json
+from tempfile import TemporaryDirectory
+from pathlib import Path
 from unittest import TestCase
 
 from search_papers import (
@@ -6,6 +9,7 @@ from search_papers import (
     Paper,
     build_candidates,
     heuristic_tag,
+    load_existing_papers,
     matched_org_signals,
     matched_people,
     matched_products,
@@ -95,3 +99,26 @@ class RuleTests(TestCase):
             "Relay Diffusion: Unifying diffusion process across resolutions for image synthesis",
             VERIFIED_TITLES,
         )
+
+    def test_existing_papers_dates_are_timezone_aware(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "papers.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "rows": [
+                            {
+                                "arxiv_id": "2601.00001",
+                                "title": "GLM report",
+                                "authors": "Jie Tang, Aohan Zeng",
+                                "published": "2026-01-01",
+                                "arxiv_url": "https://arxiv.org/abs/2601.00001",
+                                "pdf_url": "https://arxiv.org/pdf/2601.00001",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            papers = load_existing_papers(path)
+            self.assertIsNotNone(papers["2601.00001"].published.tzinfo)

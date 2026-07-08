@@ -7,7 +7,7 @@ import re
 import time
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
@@ -210,6 +210,8 @@ def load_existing_papers(path: Path) -> dict[str, Paper]:
             published_at = datetime.fromisoformat(published)
         except ValueError:
             continue
+        if published_at.tzinfo is None:
+            published_at = published_at.replace(tzinfo=timezone.utc)
         if published_at.year < MIN_YEAR:
             continue
         authors = tuple(
