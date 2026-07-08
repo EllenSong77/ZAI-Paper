@@ -17,7 +17,8 @@ ARXIV_API = "https://export.arxiv.org/api/query"
 GLM_API = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 ATOM = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
 OPENSEARCH = {"os": "http://a9.com/-/spec/opensearch/1.1/"}
-CACHE_VERSION = "people-products-rules-v2"
+MIN_YEAR = 2020
+CACHE_VERSION = "people-products-tags-v4"
 
 PEOPLE = {
     "唐杰": "Jie Tang",
@@ -27,8 +28,25 @@ PEOPLE = {
     "刘潇": "Xiao Liu",
     "曾奥涵": "Aohan Zeng",
     "郑问笛": "Wendi Zheng",
+    "杜政晓": "Zhengxiao Du",
+    "黄明烈": "Minlie Huang",
+    "张笑涵": "Xiaohan Zhang",
+    "洪文逸": "Wenyi Hong",
 }
 PRODUCTS = ("GLM", "CogView", "CogVideo", "CogVLM")
+PRODUCT_TAG_HINTS = (
+    "GLM",
+    "ChatGLM",
+    "AutoGLM",
+    "WebGLM",
+    "CogView",
+    "CogVideo",
+    "CogVLM",
+    "CogAgent",
+    "CodeGeeX",
+)
+TSINGHUA_MARKERS = ("THUDM", "Tsinghua", "Qinghua")
+PAPER_TAGS = ("产品强相关", "学术输出")
 ORG_AUTHOR_QUERIES = {
     "Zhipu": "au:Zhipu",
     "Z.AI": 'au:"Z.AI"',
@@ -90,11 +108,13 @@ def request_with_retry(
         except requests.RequestException as error:
             last_error = error
             if attempt < retries - 1:
-                time.sleep(2**attempt)
+                time.sleep(5 * (attempt + 1))
                 continue
             raise
         if response.status_code in retry_statuses and attempt < retries - 1:
-            time.sleep(2**attempt)
+            retry_after = response.headers.get("Retry-After")
+            wait = int(retry_after) if retry_after and retry_after.isdigit() else 10 * (attempt + 1)
+            time.sleep(wait)
             continue
         response.raise_for_status()
         return response
@@ -154,6 +174,7 @@ def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper
                 "sortBy": "submittedDate",
                 "sortOrder": "descending",
             },
+            retries=6,
             timeout=30,
         )
         root = ET.fromstring(response.text)
@@ -161,9 +182,11 @@ def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper
         page = parse_feed(response.text)
         if not page:
             break
-        papers.extend(page)
+        papers.extend(paper for paper in page if paper.published.year >= MIN_YEAR)
         offset += len(page)
         print(f"arXiv {label}: {offset}/{total}", flush=True)
+        if page[-1].published.year < MIN_YEAR:
+            break
         if offset < total:
             time.sleep(3)
     return papers
@@ -176,6 +199,11 @@ def matched_people(paper: Paper) -> list[str]:
 def matched_products(paper: Paper) -> list[str]:
     text = f"{paper.title} {paper.abstract}".casefold()
     return [product for product in PRODUCTS if product.casefold() in text]
+
+
+def matched_tsinghua_signals(paper: Paper) -> list[str]:
+    text = " ".join((paper.title, paper.abstract, *paper.authors))
+    return [marker for marker in TSINGHUA_MARKERS if marker.casefold() in text.casefold()]
 
 
 def matched_org_signals(paper: Paper) -> list[str]:
@@ -193,6 +221,20 @@ def matched_org_signals(paper: Paper) -> list[str]:
         elif "glm" in normalized and "team" in normalized:
             signals.append(author)
     return signals
+
+
+def heuristic_tag(paper: Paper, products: list[str], org_signals: list[str]) -> str:
+    text = f"{paper.title} {paper.abstract}"
+    if products or any(hint.casefold() in text.casefold() for hint in PRODUCT_TAG_HINTS):
+        return "产品强相关"
+    if any("glm" in re.sub(r"[^a-z0-9]+", "", signal.casefold()) for signal in org_signals):
+        return "产品强相关"
+    return "学术输出"
+
+
+def normalize_tag(value: object, fallback: str) -> str:
+    tag = str(value or "").strip()
+    return tag if tag in PAPER_TAGS else fallback
 
 
 def split_journal_ref(value: str) -> tuple[str, str]:
@@ -223,12 +265,17 @@ def prompt(items: list[dict]) -> str:
 - 命中指定作者3人及以上，收录；
 - 作者或机构包含 Zhipu、Z.AI，或同一机构名同时包含 GLM 和 Team，收录；
 - 命中 GLM、CogView、CogVideo、CogVLM，且指定作者至少2人，收录；
+- Jie Tang 论文中出现清华相关关键要素（如 THUDM、Tsinghua），收录；
 - 仅命中2人且无产品词时，结合标题、摘要、完整作者排除同名作者和无关论文。
 
-指定作者：唐杰、刘德兵、张鹏、顾晓韬、刘潇、曾奥涵、郑问笛。
+标签：
+- 产品强相关：与智谱发布模型/产品直接相关，如 GLM、ChatGLM、AutoGLM、CogView、CogVideo、CogVLM、CodeGeeX，或这些模型的理论/技术报告/训练方法论文。
+- 学术输出：作者来自相关团队，但论文主题无法直接对应公司发布模型或产品。
+
+指定作者：唐杰、刘德兵、张鹏、顾晓韬、刘潇、曾奥涵、郑问笛、杜政晓、黄明烈、张笑涵、洪文逸。
 只返回与输入顺序一致的 JSON 数组：
-[{{"arxiv_id":"编号","relevant":true,"translated_title":"中文标题"}}]
-所有论文都必须返回非空 translated_title。
+[{{"arxiv_id":"编号","relevant":true,"translated_title":"中文标题","tag":"产品强相关"}}]
+所有论文都必须返回非空 translated_title 和 tag。tag 只能是“产品强相关”或“学术输出”。
 
 {json.dumps(items, ensure_ascii=False)}
 """
@@ -273,7 +320,9 @@ def review_and_translate(
                 "people": item["people"],
                 "products": item["products"],
                 "org_signals": item["org_signals"],
+                "tsinghua_signals": item["tsinghua_signals"],
                 "automatic": item["automatic"],
+                "fallback_tag": item["fallback_tag"],
             }
             for item in batch
         ]
@@ -302,10 +351,12 @@ def review_and_translate(
                     str(item.get("translated_title", "")).strip()
                     for item in results
                 ]
+                tags = [str(item.get("tag", "")).strip() for item in results]
                 if (
                     len(results) != len(batch)
                     or returned != expected
                     or not all(translations)
+                    or not all(tag in PAPER_TAGS for tag in tags)
                 ):
                     raise ValueError("incomplete LLM result")
                 break
@@ -319,6 +370,7 @@ def review_and_translate(
             cache[source["arxiv_id"]] = {
                 "relevant": bool(result.get("relevant")),
                 "translated_title": translation,
+                "tag": normalize_tag(result.get("tag"), source["fallback_tag"]),
             }
         save_cache(cache_path, cache)
         print(
@@ -332,11 +384,16 @@ def review_and_translate(
 def build_candidates(papers: dict[str, Paper]) -> list[dict]:
     candidates = []
     for paper in papers.values():
+        if paper.published.year < MIN_YEAR:
+            continue
         people = matched_people(paper)
         products = matched_products(paper)
         org_signals = matched_org_signals(paper)
-        if len(people) < 2 and not org_signals:
+        tsinghua_signals = matched_tsinghua_signals(paper)
+        jie_tang_tsinghua = "唐杰" in people and bool(tsinghua_signals)
+        if len(people) < 2 and not org_signals and not jie_tang_tsinghua:
             continue
+        fallback_tag = heuristic_tag(paper, products, org_signals)
         candidates.append(
             {
                 "arxiv_id": paper.arxiv_id,
@@ -346,10 +403,13 @@ def build_candidates(papers: dict[str, Paper]) -> list[dict]:
                 "people": people,
                 "products": products,
                 "org_signals": org_signals,
+                "tsinghua_signals": tsinghua_signals,
+                "fallback_tag": fallback_tag,
                 "automatic": (
                     len(people) >= 3
                     or bool(org_signals)
                     or (bool(products) and len(people) >= 2)
+                    or jie_tang_tsinghua
                     or paper.title in VERIFIED_TITLES
                 ),
             }
@@ -397,6 +457,7 @@ def main() -> None:
                 "title": paper.title,
                 "authors": ", ".join(paper.authors),
                 "translated_title": review["translated_title"],
+                "tag": review["tag"],
                 "journal_name": journal_name,
                 "journal_issue": journal_issue,
                 "published": paper.published.date().isoformat(),
@@ -411,6 +472,10 @@ def main() -> None:
             "candidate_count": len(candidates),
             "automatic_include": sum(item["automatic"] for item in candidates),
             "probability_approved_by_llm": llm_approved,
+            "product_related": sum(
+                1 for row in rows if row["tag"] == "产品强相关"
+            ),
+            "academic_output": sum(1 for row in rows if row["tag"] == "学术输出"),
             "final_count": len(rows),
         },
         "rows": rows,

@@ -16,6 +16,10 @@
         --accent: #0f172a;
         --accent-soft: #eef2ff;
         --accent-line: #c7d2fe;
+        --product: #4338ca;
+        --product-bg: #eef2ff;
+        --academic: #047857;
+        --academic-bg: #ecfdf5;
         --ring: rgba(15, 23, 42, 0.08);
       }
 
@@ -110,7 +114,7 @@
 
       .toolbar {
         display: grid;
-        grid-template-columns: 1fr 170px;
+        grid-template-columns: 1fr 160px 170px;
         gap: 8px;
         margin: 10px 0;
       }
@@ -211,6 +215,27 @@
         white-space: nowrap;
       }
 
+      .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 650;
+        line-height: 1;
+        padding: 4px 8px;
+        white-space: nowrap;
+      }
+
+      .tag-product {
+        background: var(--product-bg);
+        color: var(--product);
+      }
+
+      .tag-academic {
+        background: var(--academic-bg);
+        color: var(--academic);
+      }
+
       .links {
         white-space: nowrap;
       }
@@ -298,6 +323,11 @@
         <div class="stats" id="stats"></div>
         <div class="toolbar">
           <input id="search" type="search" placeholder="搜索标题、作者、汉译或 arXiv ID" />
+          <select id="tag">
+            <option value="">全部标签</option>
+            <option value="产品强相关">产品强相关</option>
+            <option value="学术输出">学术输出</option>
+          </select>
           <select id="year">
             <option value="">全部年份</option>
           </select>
@@ -306,16 +336,18 @@
         <div class="table-wrap">
           <table>
             <colgroup>
-              <col style="width: 52%" />
+              <col style="width: 47%" />
               <col style="width: 22%" />
               <col style="width: 9%" />
-              <col style="width: 8%" />
               <col style="width: 9%" />
+              <col style="width: 6%" />
+              <col style="width: 7%" />
             </colgroup>
             <thead>
               <tr>
                 <th>论文</th>
                 <th>作者</th>
+                <th>标签</th>
                 <th>arXiv 号</th>
                 <th>发表时间</th>
                 <th>链接</th>
@@ -348,8 +380,8 @@
         const items = [
           ["最终收录", summary.final_count],
           ["候选论文", summary.candidate_count ?? summary.at_least_two_people],
-          ["规则直接收录", summary.automatic_include],
-          ["LLM 通过", summary.probability_approved_by_llm],
+          ["产品强相关", summary.product_related],
+          ["学术输出", summary.academic_output],
         ];
         $("stats").innerHTML = items
           .map(([label, value]) => `<div class="stat"><b>${value ?? "-"}</b><span>${label}</span></div>`)
@@ -367,16 +399,22 @@
       function render() {
         const query = $("search").value.trim().toLowerCase();
         const year = $("year").value;
+        const tag = $("tag").value;
         const rows = state.rows.filter((row) => {
           const haystack = [
             row.title,
             row.authors,
             row.translated_title,
             row.arxiv_id,
+            row.tag,
           ]
             .join(" ")
             .toLowerCase();
-          return (!year || row.published.startsWith(year)) && (!query || haystack.includes(query));
+          return (
+            (!year || row.published.startsWith(year)) &&
+            (!tag || row.tag === tag) &&
+            (!query || haystack.includes(query))
+          );
         });
 
         $("meta").textContent = `显示 ${rows.length} / ${state.rows.length} 篇；更新于 ${
@@ -389,6 +427,8 @@
               const title = escapeHtml(row.title);
               const translatedTitle = escapeHtml(row.translated_title || "");
               const authors = escapeHtml(row.authors);
+              const tag = escapeHtml(row.tag || "学术输出");
+              const tagClass = row.tag === "产品强相关" ? "tag-product" : "tag-academic";
               const arxivId = escapeHtml(row.arxiv_id);
               const published = escapeHtml(formatDate(row.published));
               const arxivUrl = escapeHtml(row.arxiv_url);
@@ -400,6 +440,7 @@
                     <span class="translation truncate has-tooltip" data-tooltip="${title}\n${translatedTitle}">${translatedTitle}</span>
                   </td>
                   <td><span class="authors truncate has-tooltip" data-tooltip="${authors}">${authors}</span></td>
+                  <td><span class="tag-pill ${tagClass}">${tag}</span></td>
                   <td><span class="id-pill">${arxivId}</span></td>
                   <td class="date-cell">${published}</td>
                   <td class="links">
@@ -409,7 +450,7 @@
                   </td>
                 </tr>`;
             })
-            .join("") || `<tr><td colspan="5" class="empty">没有匹配结果</td></tr>`;
+            .join("") || `<tr><td colspan="6" class="empty">没有匹配结果</td></tr>`;
       }
 
       fetch("./data/zhipu_papers.json", { cache: "no-store" })
@@ -426,6 +467,7 @@
         });
 
       $("search").addEventListener("input", render);
+      $("tag").addEventListener("change", render);
       $("year").addEventListener("change", render);
 
       const tooltip = document.createElement("div");
