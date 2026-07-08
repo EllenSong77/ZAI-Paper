@@ -19,6 +19,9 @@ ATOM = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schema
 OPENSEARCH = {"os": "http://a9.com/-/spec/opensearch/1.1/"}
 MIN_YEAR = 2020
 CACHE_VERSION = "people-products-tags-v4"
+ARXIV_PAGE_SIZE = 100
+ARXIV_RETRIES = 2
+ARXIV_QUERY_DELAY_SECONDS = 5
 
 PEOPLE = {
     "唐杰": "Jie Tang",
@@ -170,11 +173,11 @@ def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper
             params={
                 "search_query": query,
                 "start": offset,
-                "max_results": 300,
+                "max_results": ARXIV_PAGE_SIZE,
                 "sortBy": "submittedDate",
                 "sortOrder": "descending",
             },
-            retries=6,
+            retries=ARXIV_RETRIES,
             timeout=30,
         )
         root = ET.fromstring(response.text)
@@ -190,6 +193,64 @@ def fetch_query(session: requests.Session, label: str, query: str) -> list[Paper
         if offset < total:
             time.sleep(3)
     return papers
+
+
+def load_existing_papers(path: Path) -> dict[str, Paper]:
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    papers = {}
+    for row in data.get("rows", []):
+        arxiv_id = str(row.get("arxiv_id", "")).strip()
+        title = str(row.get("title", "")).strip()
+        published = str(row.get("published", "")).strip()
+        if not arxiv_id or not title or not published:
+            continue
+        try:
+            published_at = datetime.fromisoformat(published)
+        except ValueError:
+            continue
+        if published_at.year < MIN_YEAR:
+            continue
+        authors = tuple(
+            author.strip()
+            for author in str(row.get("authors", "")).split(",")
+            if author.strip()
+        )
+        papers[arxiv_id] = Paper(
+            arxiv_id=arxiv_id,
+            title=title,
+            authors=authors,
+            abstract="",
+            published=published_at,
+            abs_url=str(row.get("arxiv_url", "")).strip(),
+            pdf_url=str(row.get("pdf_url", "")).strip(),
+            journal_ref=", ".join(
+                part
+                for part in (
+                    str(row.get("journal_name", "")).strip(),
+                    str(row.get("journal_issue", "")).strip(),
+                )
+                if part
+            ),
+        )
+    return papers
+
+
+def fetch_all_papers(session: requests.Session) -> tuple[dict[str, Paper], list[str]]:
+    papers: dict[str, Paper] = {}
+    failures = []
+    queries = arxiv_queries()
+    for index, (label, query) in enumerate(queries):
+        try:
+            for paper in fetch_query(session, label, query):
+                papers[paper.arxiv_id] = paper
+        except requests.RequestException as error:
+            failures.append(label)
+            print(f"arXiv {label}: skipped after error: {error}", flush=True)
+        if index < len(queries) - 1:
+            time.sleep(ARXIV_QUERY_DELAY_SECONDS)
+    return papers, failures
 
 def matched_people(paper: Paper) -> list[str]:
     authors = {name.casefold() for name in paper.authors}
@@ -351,12 +412,10 @@ def review_and_translate(
                     str(item.get("translated_title", "")).strip()
                     for item in results
                 ]
-                tags = [str(item.get("tag", "")).strip() for item in results]
                 if (
                     len(results) != len(batch)
                     or returned != expected
                     or not all(translations)
-                    or not all(tag in PAPER_TAGS for tag in tags)
                 ):
                     raise ValueError("incomplete LLM result")
                 break
@@ -430,11 +489,11 @@ def main() -> None:
     session = requests.Session()
     session.headers["User-Agent"] = "ArxivZhipuPaperSearch/1.0"
 
-    papers = {
-        paper.arxiv_id: paper
-        for label, query in arxiv_queries()
-        for paper in fetch_query(session, label, query)
-    }
+    papers, arxiv_failures = fetch_all_papers(session)
+    existing_papers = load_existing_papers(ROOT / "public/data/zhipu_papers.json")
+    for arxiv_id, paper in existing_papers.items():
+        papers.setdefault(arxiv_id, paper)
+
     candidates = build_candidates(papers)
     reviews = review_and_translate(
         candidates,
@@ -469,6 +528,7 @@ def main() -> None:
     result = {
         "summary": {
             "queried_unique_papers": len(papers),
+            "arxiv_query_failures": arxiv_failures,
             "candidate_count": len(candidates),
             "automatic_include": sum(item["automatic"] for item in candidates),
             "probability_approved_by_llm": llm_approved,
