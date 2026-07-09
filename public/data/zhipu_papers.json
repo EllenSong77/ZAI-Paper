@@ -13,11 +13,11 @@
     "arxiv_query_failures": [],
     "candidate_count": 2,
     "automatic_include": 1,
-    "probability_approved_by_llm": 1,
+    "probability_approved_by_llm": 0,
     "product_related": 36,
     "academic_output": 88,
     "final_count": 124,
-    "updated_at": "2026-07-09T15:14:48.618390+08:00"
+    "updated_at": "2026-07-09T07:34:39.885452+00:00"
   },
   "rows": [
     {
