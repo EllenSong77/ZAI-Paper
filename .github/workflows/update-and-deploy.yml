@@ -2,6 +2,11 @@ name: Update and deploy Pages
 
 on:
   workflow_dispatch:
+    inputs:
+      sync_mode:
+        description: "arXiv sync mode: incremental or full"
+        required: false
+        default: "incremental"
   schedule:
     - cron: "0 1 * * *"
 
@@ -41,6 +46,7 @@ jobs:
         env:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
           ZHIPU_CLASSIFIER_MODEL: glm-5-turbo
+          ARXIV_SYNC_MODE: ${{ github.event.inputs.sync_mode || 'incremental' }}
 
       - name: Commit updated data
         run: |

@@ -8,12 +8,15 @@ from search_papers import (
     VERIFIED_TITLES,
     Paper,
     build_candidates,
+    date_limited_query,
     heuristic_tag,
+    incremental_window,
     load_existing_papers,
     matched_org_signals,
     matched_people,
     matched_products,
     matched_tsinghua_signals,
+    normalize_sync_mode,
     split_journal_ref,
 )
 
@@ -122,3 +125,28 @@ class RuleTests(TestCase):
             )
             papers = load_existing_papers(path)
             self.assertIsNotNone(papers["2601.00001"].published.tzinfo)
+
+    def test_date_limited_query_uses_arxiv_submitted_date_range(self) -> None:
+        query = date_limited_query(
+            'au:"Jie Tang"',
+            datetime(2026, 1, 1, tzinfo=timezone.utc),
+            datetime(2026, 7, 10, tzinfo=timezone.utc),
+        )
+        self.assertEqual(
+            query,
+            '(au:"Jie Tang") AND submittedDate:[202601010000 TO 202607100000]',
+        )
+
+    def test_incremental_window_uses_existing_latest_date_with_overlap(self) -> None:
+        paper = self.paper(("Jie Tang",), "GLM report")
+        label, since, until = incremental_window(
+            {paper.arxiv_id: paper},
+            datetime(2026, 1, 20, tzinfo=timezone.utc),
+        )
+        self.assertEqual(label, "since-2025-12-18")
+        self.assertEqual(since.date().isoformat(), "2025-12-18")
+        self.assertEqual(until.date().isoformat(), "2026-01-21")
+
+    def test_unknown_sync_mode_defaults_to_incremental(self) -> None:
+        self.assertEqual(normalize_sync_mode("full"), "full")
+        self.assertEqual(normalize_sync_mode("surprise"), "incremental")
