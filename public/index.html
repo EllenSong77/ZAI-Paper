@@ -118,9 +118,101 @@
 
       .toolbar {
         display: grid;
-        grid-template-columns: 1fr 150px 150px 150px;
+        grid-template-columns: 1fr 150px 150px;
         gap: 8px;
         margin: 10px 0;
+      }
+
+      .topic-filter-bar {
+        margin: 0 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 9px 10px;
+        background: #f8fafc;
+      }
+
+      .topic-filter-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 7px;
+      }
+
+      .topic-filter-title {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .topic-filter-title b {
+        font-size: 11.5px;
+      }
+
+      .topic-filter-title span {
+        color: var(--muted);
+        font-size: 10.5px;
+      }
+
+      .topic-filter-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 7px;
+        background: white;
+        color: #334155;
+        font: inherit;
+        font-size: 10.5px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .filter-chip:hover {
+        border-color: var(--accent-line);
+        background: var(--accent-soft);
+      }
+
+      .filter-chip[aria-pressed="true"] {
+        border-color: #6366f1;
+        background: #4f46e5;
+        color: white;
+      }
+
+      .filter-chip:focus-visible,
+      .topic-clear:focus-visible {
+        outline: 2px solid #818cf8;
+        outline-offset: 2px;
+      }
+
+      .filter-count {
+        color: var(--muted);
+        font-size: 9.5px;
+      }
+
+      .filter-chip[aria-pressed="true"] .filter-count {
+        color: #e0e7ff;
+      }
+
+      .topic-clear {
+        border: 0;
+        padding: 2px 0;
+        background: transparent;
+        color: #4f46e5;
+        font: inherit;
+        font-size: 10.5px;
+        cursor: pointer;
+      }
+
+      .topic-clear[hidden] {
+        display: none;
       }
 
       input,
@@ -509,12 +601,19 @@
             <option value="产品技术支持">产品技术支持</option>
             <option value="非产品相关">非产品相关</option>
           </select>
-          <select id="topic">
-            <option value="">全部方向</option>
-          </select>
           <select id="year">
             <option value="">全部年份</option>
           </select>
+        </div>
+        <div class="topic-filter-bar">
+          <div class="topic-filter-header">
+            <div class="topic-filter-title">
+              <b>Tag 筛选</b>
+              <span>多选时同时包含全部 Tag</span>
+            </div>
+            <button class="topic-clear" id="topic-clear" type="button" hidden>清除</button>
+          </div>
+          <div class="topic-filter-list" id="topic-filters"></div>
         </div>
         <p class="meta" id="meta">加载中...</p>
         <div class="table-wrap">
@@ -590,7 +689,7 @@
     </dialog>
 
     <script>
-      const state = { rows: [], summary: {} };
+      const state = { rows: [], selectedTopics: new Set(), summary: {} };
       const $ = (id) => document.getElementById(id);
       let tooltipHideTimer = null;
       let tooltipTarget = null;
@@ -625,15 +724,35 @@
       }
 
       function renderTopics(rows) {
-        const topics = [...new Set(rows.flatMap((row) => row.topic_tags))].sort((a, b) =>
-          a.localeCompare(b, "zh-CN")
+        const counts = new Map();
+        rows.forEach((row) => {
+          row.topic_tags.forEach((topic) => {
+            counts.set(topic, (counts.get(topic) || 0) + 1);
+          });
+        });
+        const topics = [...counts].sort(
+          ([leftTopic, leftCount], [rightTopic, rightCount]) =>
+            rightCount - leftCount || leftTopic.localeCompare(rightTopic, "zh-CN")
         );
-        $("topic").insertAdjacentHTML(
-          "beforeend",
-          topics
-            .map((topic) => `<option value="${escapeHtml(topic)}">${escapeHtml(topic)}</option>`)
-            .join("")
-        );
+        $("topic-filters").innerHTML = topics
+          .map(
+            ([topic, count]) => `
+              <button class="filter-chip" type="button" data-filter-topic="${escapeHtml(topic)}"
+                aria-pressed="false">
+                ${escapeHtml(topic)} <span class="filter-count">${count}</span>
+              </button>`
+          )
+          .join("");
+      }
+
+      function updateTopicFilters() {
+        document.querySelectorAll("[data-filter-topic]").forEach((button) => {
+          button.setAttribute(
+            "aria-pressed",
+            String(state.selectedTopics.has(button.dataset.filterTopic))
+          );
+        });
+        $("topic-clear").hidden = state.selectedTopics.size === 0;
       }
 
       function hideTooltip() {
@@ -725,7 +844,6 @@
         const query = $("search").value.trim().toLowerCase();
         const year = $("year").value;
         const tag = $("tag").value;
-        const topic = $("topic").value;
         const rows = state.rows.filter((row) => {
           const haystack = [
             row.title,
@@ -742,7 +860,7 @@
           return (
             (!year || row.published.startsWith(year)) &&
             (!tag || row.tag === tag) &&
-            (!topic || row.topic_tags.includes(topic)) &&
+            [...state.selectedTopics].every((topic) => row.topic_tags.includes(topic)) &&
             (!query || haystack.includes(query))
           );
         });
@@ -824,8 +942,26 @@
 
       $("search").addEventListener("input", render);
       $("tag").addEventListener("change", render);
-      $("topic").addEventListener("change", render);
       $("year").addEventListener("change", render);
+      $("topic-filters").addEventListener("click", (event) => {
+        const target = event.target.closest("[data-filter-topic]");
+        if (!target) {
+          return;
+        }
+        const topic = target.dataset.filterTopic;
+        if (state.selectedTopics.has(topic)) {
+          state.selectedTopics.delete(topic);
+        } else {
+          state.selectedTopics.add(topic);
+        }
+        updateTopicFilters();
+        render();
+      });
+      $("topic-clear").addEventListener("click", () => {
+        state.selectedTopics.clear();
+        updateTopicFilters();
+        render();
+      });
       $("papers").addEventListener("click", (event) => {
         const target = event.target.closest("[data-paper-id]");
         if (target) {
