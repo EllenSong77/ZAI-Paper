@@ -36,7 +36,7 @@ ATOM = {
 }
 OPENSEARCH = {"os": "http://a9.com/-/spec/opensearch/1.1/"}
 MIN_YEAR = 2020
-CACHE_VERSION = "zai-metadata-topic-tags-v5"
+CACHE_VERSION = "zai-xin-lv-pairs-v7"
 ARXIV_PAGE_SIZE = 200
 ARXIV_ID_BATCH_SIZE = 100
 ARXIV_RETRIES = 5
@@ -56,6 +56,7 @@ PEOPLE = {
     "黄明烈": "Minlie Huang",
     "张笑涵": "Xiaohan Zhang",
     "洪文逸": "Wenyi Hong",
+    "吕鑫": "Xin Lv",
 }
 PRODUCT_ALIASES = (
     "GLM",
@@ -643,6 +644,47 @@ def fetch_all_papers(
     return papers, failures
 
 
+def configured_pair_backfill(value: str) -> list[str]:
+    """Returns requested non-founder authors eligible for pair backfill."""
+    requested = normalize_string_list(value.split(","))
+    allowed_authors = [author for author in PEOPLE.values() if author != "Jie Tang"]
+    allowed = {author.casefold(): author for author in allowed_authors}
+    return [
+        allowed[author.casefold()]
+        for author in requested
+        if author.casefold() in allowed
+    ]
+
+
+def fetch_pair_backfill(
+    session: requests.Session, authors: list[str], now: datetime
+) -> dict[str, Paper]:
+    """Fetches full history for pairs containing newly tracked authors."""
+    papers = {}
+    since = datetime(MIN_YEAR, 1, 1, tzinfo=timezone.utc)
+    until = now + timedelta(days=1)
+    for index, author in enumerate(authors):
+        partners = [
+            partner
+            for partner in PEOPLE.values()
+            if partner not in {"Jie Tang", author}
+        ]
+        pair_query = " OR ".join(
+            f'(au:"{author}" AND au:"{partner}")' for partner in partners
+        )
+        for paper in fetch_query(
+            session,
+            f"pair backfill {author}",
+            f"({pair_query})",
+            since,
+            until,
+        ):
+            papers[paper.arxiv_id] = paper
+        if index < len(authors) - 1:
+            time.sleep(ARXIV_QUERY_DELAY_SECONDS)
+    return papers
+
+
 def matched_people(paper: Paper) -> list[str]:
     """Returns configured people who exactly match an author name."""
     authors = {name.casefold() for name in paper.authors}
@@ -1057,8 +1099,10 @@ def build_candidates(
         support_signals = matched_support_signals(paper)
         org_signals = matched_org_signals(paper)
         tsinghua_signals = matched_tsinghua_signals(paper)
-        founder_coauthors = matched_founder_coauthors(paper)
         is_founder_candidate = "唐杰" in people
+        founder_coauthors = (
+            matched_founder_coauthors(paper) if is_founder_candidate else []
+        )
         manually_verified = paper.title in VERIFIED_TITLES
         curated_support = CURATED_SUPPORT_RELATIONS.get(paper.title, "")
         direct_product_signal = bool(
@@ -1088,7 +1132,10 @@ def build_candidates(
             evidence.append("exact-author:Jie Tang")
         if founder_coauthors:
             evidence.append(f"founder-coauthors:{', '.join(founder_coauthors)}")
-        if paper.primary_category in JIE_TANG_RESEARCH_CATEGORIES:
+        if (
+            is_founder_candidate
+            and paper.primary_category in JIE_TANG_RESEARCH_CATEGORIES
+        ):
             evidence.append(f"founder-topic:{paper.primary_category}")
         if org_signals:
             evidence.append(f"organization:{', '.join(org_signals)}")
@@ -1223,6 +1270,11 @@ def main() -> None:
     fetched_papers, arxiv_failures = fetch_all_papers(
         session, existing_papers, mode, now
     )
+    pair_backfill = configured_pair_backfill(
+        os.getenv("ARXIV_PAIR_BACKFILL_AUTHOR", "")
+    )
+    if pair_backfill:
+        fetched_papers.update(fetch_pair_backfill(session, pair_backfill, now))
     if mode == "full" and arxiv_failures:
         raise RuntimeError(
             "full sync aborted because arXiv queries failed: "

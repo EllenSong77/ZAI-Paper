@@ -16,6 +16,7 @@ from search_papers import (
     approved_rows,
     arxiv_queries,
     build_candidates,
+    configured_pair_backfill,
     date_limited_query,
     enforce_tag_policy,
     heuristic_tag,
@@ -101,6 +102,21 @@ class RuleTests(TestCase):
         self.assertEqual(len(candidates), 1)
         self.assertFalse(candidates[0]["hard_selected"])
         self.assertIn("exact-author:Jie Tang", candidates[0]["evidence"])
+
+    def test_xin_lv_uses_the_same_pair_rules_as_other_people(self) -> None:
+        solo = self.paper(("Xin Lv", "Someone Else"), "Knowledge reasoning")
+        self.assertEqual(build_candidates({solo.arxiv_id: solo}), [])
+
+        pair = self.paper(("Xin Lv", "Peng Zhang"), "Knowledge reasoning")
+        candidate = build_candidates({pair.arxiv_id: pair})[0]
+        self.assertFalse(candidate["hard_selected"])
+        self.assertIn("listed-people:张鹏, 吕鑫", candidate["evidence"])
+        self.assertFalse(
+            any(
+                evidence.startswith("founder-")
+                for evidence in candidate["evidence"]
+            )
+        )
 
     def test_tsinghua_affiliation_and_text_mentions_are_distinct(self) -> None:
         paper = self.paper(
@@ -377,9 +393,17 @@ class RuleTests(TestCase):
             "company/product/support signals",
         ])
         self.assertIn('au:"Jie Tang"', queries[0][1])
+        self.assertNotIn('au:"Xin Lv"', queries[0][1])
         self.assertIn('au:"Aohan Zeng" AND au:"Wenyi Hong"', queries[1][1])
+        self.assertIn('au:"Wenyi Hong" AND au:"Xin Lv"', queries[1][1])
         self.assertIn('ti:"GLM"', queries[2][1])
         self.assertIn('ti:"Phone-Use"', queries[2][1])
+
+    def test_pair_backfill_excludes_the_founder_and_unknown_authors(self) -> None:
+        self.assertEqual(
+            configured_pair_backfill("Xin Lv, Unknown Person, Jie Tang"),
+            ["Xin Lv"],
+        )
 
     def test_parse_feed_keeps_affiliations_and_categories(self) -> None:
         xml = """<?xml version="1.0" encoding="UTF-8"?>
