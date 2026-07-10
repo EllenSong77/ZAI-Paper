@@ -1,12 +1,19 @@
+# Updates arXiv data and deploys the static GitHub Pages site.
+# Author: Ellen Song <jiaqi.song@z.ai>
+
 name: Update and deploy Pages
 
 on:
   workflow_dispatch:
     inputs:
       sync_mode:
-        description: "arXiv sync mode: incremental or full"
-        required: false
+        description: "arXiv sync mode"
+        required: true
         default: "incremental"
+        type: choice
+        options:
+          - incremental
+          - full
   schedule:
     - cron: "0 1 * * *"
 
