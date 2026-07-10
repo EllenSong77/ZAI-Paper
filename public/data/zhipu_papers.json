@@ -1,13 +1,13 @@
 {
   "summary": {
-    "queried_unique_papers": 163,
-    "fetched_unique_papers": 41,
+    "queried_unique_papers": 165,
+    "fetched_unique_papers": 43,
     "arxiv_sync_mode": "incremental",
     "arxiv_search_windows": [
       {
         "label": "since-2026-06-02",
         "since": "2026-06-02",
-        "until": "2026-07-10"
+        "until": "2026-07-11"
       }
     ],
     "arxiv_query_failures": [],
@@ -17,7 +17,7 @@
     "product_related": 36,
     "academic_output": 88,
     "final_count": 124,
-    "updated_at": "2026-07-09T07:34:39.885452+00:00"
+    "updated_at": "2026-07-10T04:42:35.849153+00:00"
   },
   "rows": [
     {
