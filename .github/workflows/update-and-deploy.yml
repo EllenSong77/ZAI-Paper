@@ -4,6 +4,9 @@
 name: Update and deploy Pages
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       sync_mode:
