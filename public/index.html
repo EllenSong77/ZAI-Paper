@@ -7,6 +7,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link rel="apple-touch-icon" href="./favicon.png" />
     <title>Z.AI arXiv 论文列表</title>
     <style>
       :root {
@@ -53,6 +55,20 @@
       .wrap {
         max-width: 1600px;
         margin: 0 auto;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-logo {
+        flex: 0 0 auto;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        object-fit: cover;
       }
 
       h1 {
@@ -577,16 +593,27 @@
         main {
           padding: 0 14px;
         }
+
+        .brand-logo {
+          width: 36px;
+          height: 36px;
+          border-radius: 9px;
+        }
       }
     </style>
   </head>
   <body>
     <header>
       <div class="wrap">
-        <h1>Z.AI arXiv 论文列表</h1>
-        <p class="subtitle">
-          基于作者身份、机构、产品与技术关系和 GLM 审核自动更新。页面只展示最终收录论文。
-        </p>
+        <div class="brand">
+          <img class="brand-logo" src="./logo-cropped.png" alt="Z.AI" />
+          <div>
+            <h1>Z.AI arXiv 论文列表</h1>
+            <p class="subtitle">
+              基于作者身份、机构、产品与技术关系和 GLM 审核自动更新。页面只展示最终收录论文。
+            </p>
+          </div>
+        </div>
       </div>
     </header>
 
