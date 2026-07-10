@@ -1,11 +1,7 @@
-# ZAI Paper
+# Z.AI Papers
 
-This repository maintains a public list of arXiv papers related to Zhipu AI,
-Z.AI products, and Jie Tang's research.
-
-The synchronization script combines deterministic selection rules with LLM
-review, translation, and tagging. GitHub Actions updates the data daily and
-deploys the static website to GitHub Pages.
+This repository maintains a public, automatically updated list of arXiv papers
+related to Z.AI products and technologies.
 
 Public website:
 

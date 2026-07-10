@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>智谱 arXiv 论文列表</title>
+    <title>Z.AI arXiv 论文列表</title>
     <style>
       :root {
         color-scheme: light;
@@ -276,6 +276,33 @@
         white-space: nowrap;
       }
 
+      .has-tooltip {
+        cursor: help;
+      }
+
+      .tooltip {
+        position: fixed;
+        z-index: 100;
+        width: max-content;
+        max-width: min(640px, calc(100vw - 24px));
+        max-height: min(50vh, 360px);
+        overflow: auto;
+        border: 1px solid #cbd5e1;
+        border-radius: 9px;
+        padding: 8px 10px;
+        background: #0f172a;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+        color: #f8fafc;
+        font-size: 11.5px;
+        line-height: 1.5;
+        pointer-events: auto;
+        white-space: pre-wrap;
+      }
+
+      .tooltip[hidden] {
+        display: none;
+      }
+
       a {
         display: inline-flex;
         align-items: center;
@@ -322,7 +349,7 @@
   <body>
     <header>
       <div class="wrap">
-        <h1>智谱 arXiv 论文列表</h1>
+        <h1>Z.AI arXiv 论文列表</h1>
         <p class="subtitle">
           基于作者身份、机构、产品与技术关系和 GLM 审核自动更新。页面只展示最终收录论文。
         </p>
@@ -371,9 +398,13 @@
       </section>
     </main>
 
+    <div class="tooltip" id="paper-tooltip" role="tooltip" hidden></div>
+
     <script>
       const state = { rows: [], summary: {} };
       const $ = (id) => document.getElementById(id);
+      let tooltipHideTimer = null;
+      let tooltipTarget = null;
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -402,6 +433,51 @@
           "beforeend",
           years.map((year) => `<option value="${year}">${year}</option>`).join("")
         );
+      }
+
+      function hideTooltip() {
+        window.clearTimeout(tooltipHideTimer);
+        tooltipHideTimer = null;
+        tooltipTarget = null;
+        $("paper-tooltip").hidden = true;
+      }
+
+      function scheduleTooltipHide() {
+        window.clearTimeout(tooltipHideTimer);
+        tooltipHideTimer = window.setTimeout(hideTooltip, 120);
+      }
+
+      function showTooltip(target) {
+        window.clearTimeout(tooltipHideTimer);
+        tooltipHideTimer = null;
+        const content = target.dataset.tooltip;
+        if (!content) {
+          hideTooltip();
+          return;
+        }
+
+        tooltipTarget = target;
+        const tooltip = $("paper-tooltip");
+        tooltip.textContent = content;
+        tooltip.hidden = false;
+        tooltip.style.left = "0";
+        tooltip.style.top = "0";
+
+        const targetRect = target.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const margin = 12;
+        const gap = 6;
+        const left = Math.min(
+          Math.max(margin, targetRect.left),
+          window.innerWidth - tooltipRect.width - margin
+        );
+        const below = targetRect.bottom + gap;
+        const top =
+          below + tooltipRect.height <= window.innerHeight - margin
+            ? below
+            : Math.max(margin, targetRect.top - tooltipRect.height - gap);
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
       }
 
       function render() {
@@ -434,6 +510,9 @@
             .map((row) => {
               const title = escapeHtml(row.title);
               const translatedTitle = escapeHtml(row.translated_title || "");
+              const titleTooltip = escapeHtml(
+                [row.title, row.translated_title].filter(Boolean).join("\n")
+              );
               const authors = escapeHtml(row.authors);
               const tag = escapeHtml(row.tag || "非产品相关");
               const tagClass =
@@ -449,10 +528,10 @@
               return `
                 <tr>
                   <td>
-                    <span class="title truncate" title="${title}\n${translatedTitle}">${title}</span>
-                    <span class="translation truncate" title="${title}\n${translatedTitle}">${translatedTitle}</span>
+                    <span class="title truncate has-tooltip" data-tooltip="${titleTooltip}">${title}</span>
+                    <span class="translation truncate has-tooltip" data-tooltip="${titleTooltip}">${translatedTitle}</span>
                   </td>
-                  <td><span class="authors truncate" title="${authors}">${authors}</span></td>
+                  <td><span class="authors truncate has-tooltip" data-tooltip="${authors}">${authors}</span></td>
                   <td><span class="tag-pill ${tagClass}">${tag}</span></td>
                   <td><span class="id-pill">${arxivId}</span></td>
                   <td class="date-cell">${published}</td>
@@ -490,6 +569,24 @@
       $("search").addEventListener("input", render);
       $("tag").addEventListener("change", render);
       $("year").addEventListener("change", render);
+      document.addEventListener("mouseover", (event) => {
+        const target = event.target.closest("[data-tooltip]");
+        if (target && target !== tooltipTarget) {
+          showTooltip(target);
+        }
+      });
+      document.addEventListener("mouseout", (event) => {
+        if (tooltipTarget && !tooltipTarget.contains(event.relatedTarget)) {
+          scheduleTooltipHide();
+        }
+      });
+      $("paper-tooltip").addEventListener("mouseenter", () => {
+        window.clearTimeout(tooltipHideTimer);
+        tooltipHideTimer = null;
+      });
+      $("paper-tooltip").addEventListener("mouseleave", scheduleTooltipHide);
+      window.addEventListener("resize", hideTooltip);
+      window.addEventListener("scroll", hideTooltip, true);
     </script>
   </body>
 </html>
