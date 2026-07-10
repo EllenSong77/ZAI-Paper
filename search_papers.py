@@ -27,11 +27,18 @@ import requests
 ROOT = Path(__file__).resolve().parent
 ARXIV_API = "https://export.arxiv.org/api/query"
 GLM_API = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-ATOM = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
+SEMANTIC_SCHOLAR_API = (
+    "https://api.semanticscholar.org/graph/v1/paper/batch"
+)
+ATOM = {
+    "atom": "http://www.w3.org/2005/Atom",
+    "arxiv": "http://arxiv.org/schemas/atom",
+}
 OPENSEARCH = {"os": "http://a9.com/-/spec/opensearch/1.1/"}
 MIN_YEAR = 2020
-CACHE_VERSION = "zhipu-founder-three-tags-v4"
+CACHE_VERSION = "zai-metadata-topic-tags-v5"
 ARXIV_PAGE_SIZE = 200
+ARXIV_ID_BATCH_SIZE = 100
 ARXIV_RETRIES = 5
 ARXIV_QUERY_DELAY_SECONDS = 4
 DEFAULT_INCREMENTAL_OVERLAP_DAYS = 14
@@ -134,6 +141,49 @@ SUPPORT_TAG_HINTS = (
 TSINGHUA_MARKERS = ("THUDM", "Tsinghua", "Qinghua")
 PAPER_TAGS = ("产品相关", "产品技术支持", "非产品相关")
 LEGACY_TAGS = {"产品强相关": "产品相关", "学术输出": "非产品相关"}
+TOPIC_TAGS = (
+    "文本",
+    "图像",
+    "视频",
+    "语音",
+    "多模态",
+    "代码",
+    "智能体",
+    "推理",
+    "生成",
+    "理解",
+    "搜索",
+    "检索",
+    "推荐",
+    "知识图谱",
+    "图学习",
+    "预训练",
+    "后训练",
+    "强化学习",
+    "对齐",
+    "微调",
+    "蒸馏",
+    "训练系统",
+    "推理系统",
+    "加速",
+    "部署",
+    "Infra",
+    "模型",
+    "框架",
+    "数据集",
+    "Benchmark",
+    "评测",
+    "安全",
+    "综述",
+)
+INSTITUTION_ALIASES = {
+    "tsinghua": "Tsinghua University",
+    "tsinghua university": "Tsinghua University",
+    "zhipu ai": "Z.AI",
+    "z.ai": "Z.AI",
+    "stern school of business, new york university": "New York University",
+    "bytedance ai lab": "ByteDance",
+}
 JIE_TANG_CORE_COAUTHORS = (
     "Yuxiao Dong",
     "Juanzi Li",
@@ -211,6 +261,43 @@ def load_env(path: Path) -> None:
 def clean(text: str | None) -> str:
     """Collapses whitespace in metadata returned by arXiv."""
     return re.sub(r"\s+", " ", text or "").strip()
+
+
+def normalize_string_list(value: object, limit: int | None = None) -> list[str]:
+    """Returns unique, non-empty strings while preserving input order."""
+    if not isinstance(value, (list, tuple)):
+        return []
+    normalized = []
+    seen = set()
+    for item in value:
+        text = clean(str(item))
+        key = text.casefold()
+        if not text or key in seen:
+            continue
+        normalized.append(text)
+        seen.add(key)
+        if limit is not None and len(normalized) >= limit:
+            break
+    return normalized
+
+
+def normalize_topic_tags(value: object) -> list[str]:
+    """Keeps up to five unique topic tags from the fixed public vocabulary."""
+    allowed = set(TOPIC_TAGS)
+    return [
+        tag
+        for tag in normalize_string_list(value)
+        if tag in allowed
+    ][:5]
+
+
+def normalize_institutions(value: object, limit: int = 8) -> list[str]:
+    """Normalizes common institution aliases for consistent display."""
+    institutions = [
+        INSTITUTION_ALIASES.get(item.casefold(), item)
+        for item in normalize_string_list(value)
+    ]
+    return normalize_string_list(institutions, limit=limit)
 
 
 def request_with_retry(
@@ -389,6 +476,82 @@ def fetch_query(
     return papers
 
 
+def fetch_papers_by_ids(
+    session: requests.Session, arxiv_ids: list[str]
+) -> dict[str, Paper]:
+    """Fetches complete arXiv metadata for known IDs in bounded batches."""
+    papers = {}
+    for start in range(0, len(arxiv_ids), ARXIV_ID_BATCH_SIZE):
+        batch = arxiv_ids[start : start + ARXIV_ID_BATCH_SIZE]
+        response = request_with_retry(
+            session,
+            "GET",
+            ARXIV_API,
+            params={"id_list": ",".join(batch), "max_results": len(batch)},
+            retries=ARXIV_RETRIES,
+            timeout=60,
+        )
+        for paper in parse_feed(response.text):
+            papers[paper.arxiv_id] = paper
+        print(
+            f"arXiv metadata: {min(start + len(batch), len(arxiv_ids))}/"
+            f"{len(arxiv_ids)}",
+            flush=True,
+        )
+        if start + len(batch) < len(arxiv_ids):
+            time.sleep(ARXIV_QUERY_DELAY_SECONDS)
+    return papers
+
+
+def fetch_external_affiliations(
+    session: requests.Session, arxiv_ids: list[str]
+) -> dict[str, list[str]]:
+    """Returns optional affiliation candidates from Semantic Scholar."""
+    if not arxiv_ids:
+        return {}
+    headers = {"User-Agent": "ZAI-Paper/1.0"}
+    api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY", "").strip()
+    if api_key:
+        headers["x-api-key"] = api_key
+    try:
+        response = request_with_retry(
+            session,
+            "POST",
+            SEMANTIC_SCHOLAR_API,
+            retries=3,
+            headers=headers,
+            params={"fields": "authors,authors.affiliations"},
+            json={"ids": [f"ARXIV:{arxiv_id}" for arxiv_id in arxiv_ids]},
+            timeout=90,
+        )
+    except requests.RequestException as error:
+        print(
+            f"Semantic Scholar affiliations skipped after error: {error}",
+            flush=True,
+        )
+        return {}
+
+    try:
+        items = response.json()
+        if not isinstance(items, list) or len(items) != len(arxiv_ids):
+            raise ValueError("unexpected Semantic Scholar response")
+    except (TypeError, ValueError) as error:
+        print(f"Semantic Scholar affiliations ignored: {error}", flush=True)
+        return {}
+
+    affiliations = {}
+    for arxiv_id, item in zip(arxiv_ids, items, strict=True):
+        if not item:
+            continue
+        values = [
+            affiliation
+            for author in item.get("authors", [])
+            for affiliation in author.get("affiliations", [])
+        ]
+        affiliations[arxiv_id] = normalize_string_list(values, limit=20)
+    return affiliations
+
+
 def load_existing_state(
     path: Path,
 ) -> tuple[dict[str, dict], dict[str, Paper]]:
@@ -422,6 +585,10 @@ def load_existing_state(
                 source.get("translated_title", "")
             ).strip(),
             "tag": normalize_tag(source.get("tag"), "非产品相关"),
+            "topic_tags": normalize_topic_tags(source.get("topic_tags")),
+            "institutions": normalize_institutions(source.get("institutions")),
+            "abstract": clean(str(source.get("abstract", ""))),
+            "metadata_enriched": bool(source.get("metadata_enriched")),
             "published": published_at.date().isoformat(),
             "pdf_url": str(source.get("pdf_url", "")).strip(),
             "arxiv_url": str(source.get("arxiv_url", "")).strip(),
@@ -435,7 +602,7 @@ def load_existing_state(
                 for author in authors_text.split(",")
                 if author.strip()
             ),
-            abstract="",
+            abstract=normalized["abstract"],
             published=published_at,
             abs_url=normalized["arxiv_url"],
             pdf_url=normalized["pdf_url"],
@@ -680,6 +847,11 @@ def validate_review_results(
     ]
     for item in results:
         normalize_relevant(item.get("relevant"))
+        topic_tags = normalize_topic_tags(item.get("topic_tags"))
+        if not 2 <= len(topic_tags) <= 5:
+            raise ValueError("LLM topic_tags must contain 2 to 5 valid tags")
+        if not isinstance(item.get("institutions"), list):
+            raise ValueError("LLM institutions must be an array")
     if (
         len(results) != len(expected_ids)
         or returned_ids != expected_ids
@@ -694,7 +866,7 @@ def validate_review_results(
 
 
 def prompt(items: list[dict]) -> str:
-    """Builds the combined relevance, translation, and tagging prompt."""
+    """Builds the combined review, translation, and metadata prompt."""
     people = "、".join(PEOPLE)
     return (
         "审核以下 arXiv 论文是否属于智谱/Z.AI 或清华唐杰团队，并翻译标题、"
@@ -721,12 +893,23 @@ def prompt(items: list[dict]) -> str:
         "评测或对齐技术。\n"
         "- 非产品相关：确认属于目标唐杰或智谱团队，但无法映射到产品或"
         "技术链。\n\n"
+        "研究标签：从固定词表中选择 2 到 5 个短标签，可复合使用。至少覆盖"
+        "研究对象或模态，并尽量覆盖能力、训练方法、工程技术或成果形式。"
+        "不要创造新标签。固定词表："
+        f"{'、'.join(TOPIC_TAGS)}。\n\n"
+        "机构：只能从 author_affiliations 和 external_affiliations 给出的候选"
+        "信息中提取真实大学、研究机构或公司名称；去掉院系、研究方向、职位"
+        "和明显不是机构的描述。不得根据作者或论文内容猜测机构；无法确认时"
+        "返回空数组。最多返回 8 个去重机构。\n\n"
         f"指定作者：{people}。\n"
         "只返回与输入顺序一致的 JSON 数组：\n"
         '[{"arxiv_id":"编号","relevant":true,'
-        '"translated_title":"中文标题","tag":"产品相关"}]\n'
+        '"translated_title":"中文标题","tag":"产品相关",'
+        '"topic_tags":["文本","模型"],'
+        '"institutions":["Tsinghua University"]}]\n'
         "relevant 必须是 JSON 布尔值；translated_title 非空；tag 只能是"
-        "“产品相关”“产品技术支持”“非产品相关”。\n\n"
+        "“产品相关”“产品技术支持”“非产品相关”；topic_tags 必须包含 2 到 5"
+        "个固定词表标签；institutions 必须是 JSON 数组。\n\n"
         f"{json.dumps(items, ensure_ascii=False)}\n"
     )
 
@@ -758,6 +941,7 @@ def review_fingerprint(item: dict, model: str) -> str:
         "title": item["title"],
         "authors": item["authors"],
         "author_affiliations": item["author_affiliations"],
+        "external_affiliations": item.get("external_affiliations", []),
         "abstract": item["abstract"],
         "categories": item["categories"],
         "evidence": item["evidence"],
@@ -796,6 +980,9 @@ def review_and_translate(
                 "title": item["title"],
                 "authors": item["authors"],
                 "author_affiliations": item["author_affiliations"],
+                "external_affiliations": item.get(
+                    "external_affiliations", []
+                ),
                 "abstract": item["abstract"][:1400],
                 "categories": item["categories"],
                 "evidence": item["evidence"],
@@ -839,6 +1026,10 @@ def review_and_translate(
                 "relevant": normalize_relevant(result.get("relevant")),
                 "translated_title": translation,
                 "tag": normalize_tag(result.get("tag"), source["fallback_tag"]),
+                "topic_tags": normalize_topic_tags(result.get("topic_tags")),
+                "institutions": normalize_institutions(
+                    result.get("institutions")
+                ),
             }
         save_cache(cache_path, cache)
         print(
@@ -850,8 +1041,12 @@ def review_and_translate(
     return cache
 
 
-def build_candidates(papers: dict[str, Paper]) -> list[dict]:
+def build_candidates(
+    papers: dict[str, Paper],
+    external_affiliations: dict[str, list[str]] | None = None,
+) -> list[dict]:
     """Builds high-recall candidates and deterministic evidence for the LLM."""
+    external_affiliations = external_affiliations or {}
     candidates = []
     for paper in papers.values():
         if paper.published.year < MIN_YEAR or paper.arxiv_id in EXCLUDED_ARXIV_IDS:
@@ -922,6 +1117,9 @@ def build_candidates(papers: dict[str, Paper]) -> list[dict]:
                 "author_affiliations": [
                     list(item) for item in paper.author_affiliations
                 ],
+                "external_affiliations": external_affiliations.get(
+                    paper.arxiv_id, []
+                ),
                 "abstract": paper.abstract,
                 "categories": list(paper.categories),
                 "evidence": evidence,
@@ -969,6 +1167,10 @@ def row_from_candidate(candidate: dict, review: dict, paper: Paper) -> dict:
         "authors": ", ".join(paper.authors),
         "translated_title": review["translated_title"],
         "tag": tag,
+        "topic_tags": normalize_topic_tags(review.get("topic_tags")),
+        "institutions": normalize_institutions(review.get("institutions")),
+        "abstract": paper.abstract,
+        "metadata_enriched": True,
         "published": paper.published.date().isoformat(),
         "pdf_url": paper.pdf_url,
         "arxiv_url": paper.abs_url,
@@ -996,7 +1198,13 @@ def merge_rows(
     rows_by_id = {} if mode == "full" else dict(existing_rows)
     for arxiv_id in EXCLUDED_ARXIV_IDS:
         rows_by_id.pop(arxiv_id, None)
-    rows_by_id.update({row["arxiv_id"]: row for row in reviewed_rows})
+    for row in reviewed_rows:
+        previous = rows_by_id.get(row["arxiv_id"], {})
+        if mode != "full" and previous.get("institutions") and not row.get(
+            "institutions"
+        ):
+            row = {**row, "institutions": previous["institutions"]}
+        rows_by_id[row["arxiv_id"]] = row
     rows = list(rows_by_id.values())
     rows.sort(key=lambda row: row.get("published", ""), reverse=True)
     return rows
@@ -1021,7 +1229,31 @@ def main() -> None:
             + ", ".join(arxiv_failures)
         )
 
-    candidates = build_candidates(fetched_papers)
+    backfill_ids = [
+        arxiv_id
+        for arxiv_id, row in existing_rows.items()
+        if (
+            not row.get("metadata_enriched")
+            or not row.get("abstract")
+            or len(row.get("topic_tags", [])) < 2
+        )
+    ]
+    if mode != "full" and backfill_ids:
+        fetched_papers.update(fetch_papers_by_ids(session, backfill_ids))
+
+    external_affiliations = fetch_external_affiliations(
+        session, list(fetched_papers)
+    )
+    candidates = build_candidates(fetched_papers, external_affiliations)
+    if mode != "full":
+        for candidate in candidates:
+            if candidate["arxiv_id"] not in existing_rows:
+                continue
+            candidate["hard_selected"] = True
+            candidate["hard_selection_reasons"] = [
+                *candidate["hard_selection_reasons"],
+                "existing-approved-row",
+            ]
     reviews = review_and_translate(
         candidates,
         os.getenv("ZHIPU_API_KEY", "").strip(),

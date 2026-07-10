@@ -118,7 +118,7 @@
 
       .toolbar {
         display: grid;
-        grid-template-columns: 1fr 160px 170px;
+        grid-template-columns: 1fr 150px 150px 150px;
         gap: 8px;
         margin: 10px 0;
       }
@@ -151,7 +151,7 @@
 
       table {
         width: 100%;
-        min-width: 1080px;
+        min-width: 1320px;
         table-layout: fixed;
         border-collapse: collapse;
         background: white;
@@ -216,6 +216,10 @@
         color: #3f3f46;
       }
 
+      .institutions {
+        color: #475569;
+      }
+
       .id-pill {
         display: inline-flex;
         align-items: center;
@@ -257,6 +261,26 @@
         color: var(--academic);
       }
 
+      .topic-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+      }
+
+      .topic-pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #dbeafe;
+        border-radius: 999px;
+        padding: 3px 6px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 10.5px;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
       .links {
         white-space: nowrap;
       }
@@ -280,6 +304,29 @@
         cursor: help;
       }
 
+      .paper-preview-button {
+        display: block;
+        width: 100%;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .paper-preview-button:hover .title,
+      .paper-preview-button:focus-visible .title {
+        color: #4338ca;
+      }
+
+      .paper-preview-button:focus-visible {
+        border-radius: 4px;
+        outline: 2px solid #818cf8;
+        outline-offset: 2px;
+      }
+
       .tooltip {
         position: fixed;
         z-index: 100;
@@ -301,6 +348,97 @@
 
       .tooltip[hidden] {
         display: none;
+      }
+
+      .preview-dialog {
+        width: min(760px, calc(100vw - 28px));
+        max-height: min(84vh, 760px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 0;
+        background: white;
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+        color: var(--foreground);
+      }
+
+      .preview-dialog::backdrop {
+        background: rgba(15, 23, 42, 0.48);
+        backdrop-filter: blur(3px);
+      }
+
+      .preview-content {
+        padding: 22px;
+      }
+
+      .preview-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .preview-header h2 {
+        margin: 0;
+        font-size: 19px;
+        line-height: 1.35;
+      }
+
+      .preview-translation {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .preview-close {
+        flex: 0 0 auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: white;
+        color: var(--muted);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .preview-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 18px 0;
+      }
+
+      .preview-field {
+        min-width: 0;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: var(--muted-bg);
+      }
+
+      .preview-field b,
+      .preview-abstract b {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--muted);
+        font-size: 10.5px;
+        letter-spacing: 0.05em;
+      }
+
+      .preview-field p,
+      .preview-abstract p {
+        margin: 0;
+        line-height: 1.65;
+      }
+
+      .preview-abstract {
+        border-top: 1px solid var(--border);
+        padding-top: 16px;
+      }
+
+      .preview-links {
+        display: flex;
+        gap: 6px;
+        margin-top: 18px;
       }
 
       a {
@@ -340,6 +478,10 @@
           grid-template-columns: 1fr;
         }
 
+        .preview-meta {
+          grid-template-columns: 1fr;
+        }
+
         main {
           padding: 0 14px;
         }
@@ -360,12 +502,15 @@
       <section class="panel">
         <div class="stats" id="stats"></div>
         <div class="toolbar">
-          <input id="search" type="search" placeholder="搜索标题、作者、汉译或 arXiv ID" />
+          <input id="search" type="search" placeholder="搜索标题、作者、机构、标签或 arXiv ID" />
           <select id="tag">
-            <option value="">全部标签</option>
+            <option value="">全部关联</option>
             <option value="产品相关">产品相关</option>
             <option value="产品技术支持">产品技术支持</option>
             <option value="非产品相关">非产品相关</option>
+          </select>
+          <select id="topic">
+            <option value="">全部方向</option>
           </select>
           <select id="year">
             <option value="">全部年份</option>
@@ -375,18 +520,22 @@
         <div class="table-wrap">
           <table>
             <colgroup>
-              <col style="width: 50%" />
-              <col style="width: 17%" />
-              <col style="width: 9.5%" />
-              <col style="width: 9%" />
-              <col style="width: 6.5%" />
+              <col style="width: 34%" />
+              <col style="width: 13%" />
+              <col style="width: 11%" />
               <col style="width: 8%" />
+              <col style="width: 14%" />
+              <col style="width: 7%" />
+              <col style="width: 6%" />
+              <col style="width: 7%" />
             </colgroup>
             <thead>
               <tr>
                 <th>论文</th>
                 <th>作者</th>
-                <th>标签</th>
+                <th>机构</th>
+                <th>关联</th>
+                <th>方向</th>
                 <th>arXiv 号</th>
                 <th>发表时间</th>
                 <th>链接</th>
@@ -399,6 +548,46 @@
     </main>
 
     <div class="tooltip" id="paper-tooltip" role="tooltip" hidden></div>
+
+    <dialog class="preview-dialog" id="paper-preview">
+      <div class="preview-content">
+        <div class="preview-header">
+          <div>
+            <h2 id="preview-title"></h2>
+            <p class="preview-translation" id="preview-translation"></p>
+          </div>
+          <form method="dialog">
+            <button class="preview-close" type="submit" aria-label="关闭">关闭</button>
+          </form>
+        </div>
+        <div class="preview-meta">
+          <div class="preview-field">
+            <b>作者</b>
+            <p id="preview-authors"></p>
+          </div>
+          <div class="preview-field">
+            <b>机构</b>
+            <p id="preview-institutions"></p>
+          </div>
+          <div class="preview-field">
+            <b>分类</b>
+            <div class="topic-tags" id="preview-tags"></div>
+          </div>
+          <div class="preview-field">
+            <b>发表信息</b>
+            <p id="preview-publication"></p>
+          </div>
+        </div>
+        <div class="preview-abstract">
+          <b>论文概览</b>
+          <p id="preview-abstract"></p>
+        </div>
+        <div class="preview-links">
+          <a id="preview-arxiv" target="_blank" rel="noreferrer">arXiv</a>
+          <a id="preview-pdf" target="_blank" rel="noreferrer">PDF</a>
+        </div>
+      </div>
+    </dialog>
 
     <script>
       const state = { rows: [], summary: {} };
@@ -432,6 +621,18 @@
         $("year").insertAdjacentHTML(
           "beforeend",
           years.map((year) => `<option value="${year}">${year}</option>`).join("")
+        );
+      }
+
+      function renderTopics(rows) {
+        const topics = [...new Set(rows.flatMap((row) => row.topic_tags))].sort((a, b) =>
+          a.localeCompare(b, "zh-CN")
+        );
+        $("topic").insertAdjacentHTML(
+          "beforeend",
+          topics
+            .map((topic) => `<option value="${escapeHtml(topic)}">${escapeHtml(topic)}</option>`)
+            .join("")
         );
       }
 
@@ -480,15 +681,59 @@
         tooltip.style.top = `${top}px`;
       }
 
+      function renderTopicPills(tags) {
+        return tags
+          .map((topic) => `<span class="topic-pill">${escapeHtml(topic)}</span>`)
+          .join("");
+      }
+
+      function openPreview(arxivId) {
+        const row = state.rows.find((item) => item.arxiv_id === arxivId);
+        if (!row) {
+          return;
+        }
+
+        hideTooltip();
+        $("preview-title").textContent = row.title;
+        $("preview-translation").textContent = row.translated_title || "";
+        $("preview-authors").textContent = row.authors || "未提供";
+        $("preview-institutions").textContent = row.institutions.length
+          ? row.institutions.join(" · ")
+          : "未提供";
+        $("preview-tags").innerHTML = [
+          `<span class="tag-pill ${tagClassFor(row.tag)}">${escapeHtml(row.tag)}</span>`,
+          renderTopicPills(row.topic_tags),
+        ].join("");
+        $("preview-publication").textContent = `${row.published || "未知"} · arXiv:${row.arxiv_id}`;
+        $("preview-abstract").textContent = row.abstract || "arXiv 暂未提供论文概览。";
+        $("preview-arxiv").href = row.arxiv_url;
+        $("preview-pdf").href = row.pdf_url;
+        $("paper-preview").showModal();
+      }
+
+      function tagClassFor(tag) {
+        if (tag === "产品相关") {
+          return "tag-product";
+        }
+        if (tag === "产品技术支持") {
+          return "tag-support";
+        }
+        return "tag-academic";
+      }
+
       function render() {
         const query = $("search").value.trim().toLowerCase();
         const year = $("year").value;
         const tag = $("tag").value;
+        const topic = $("topic").value;
         const rows = state.rows.filter((row) => {
           const haystack = [
             row.title,
             row.authors,
             row.translated_title,
+            row.institutions.join(" "),
+            row.topic_tags.join(" "),
+            row.abstract,
             row.arxiv_id,
             row.tag,
           ]
@@ -497,6 +742,7 @@
           return (
             (!year || row.published.startsWith(year)) &&
             (!tag || row.tag === tag) &&
+            (!topic || row.topic_tags.includes(topic)) &&
             (!query || haystack.includes(query))
           );
         });
@@ -514,13 +760,13 @@
                 [row.title, row.translated_title].filter(Boolean).join("\n")
               );
               const authors = escapeHtml(row.authors);
+              const institutionsText = row.institutions.length
+                ? row.institutions.join(" · ")
+                : "未提供";
+              const institutions = escapeHtml(institutionsText);
               const tag = escapeHtml(row.tag || "非产品相关");
-              const tagClass =
-                row.tag === "产品相关"
-                  ? "tag-product"
-                  : row.tag === "产品技术支持"
-                    ? "tag-support"
-                    : "tag-academic";
+              const tagClass = tagClassFor(row.tag);
+              const topicTags = renderTopicPills(row.topic_tags);
               const arxivId = escapeHtml(row.arxiv_id);
               const published = escapeHtml(row.published || "");
               const arxivUrl = escapeHtml(row.arxiv_url);
@@ -528,11 +774,17 @@
               return `
                 <tr>
                   <td>
-                    <span class="title truncate has-tooltip" data-tooltip="${titleTooltip}">${title}</span>
-                    <span class="translation truncate has-tooltip" data-tooltip="${titleTooltip}">${translatedTitle}</span>
+                    <button class="paper-preview-button has-tooltip" type="button"
+                      data-paper-id="${arxivId}" data-tooltip="${titleTooltip}"
+                      aria-label="打开 ${title} 的论文概览">
+                      <span class="title truncate">${title}</span>
+                      <span class="translation truncate">${translatedTitle}</span>
+                    </button>
                   </td>
                   <td><span class="authors truncate has-tooltip" data-tooltip="${authors}">${authors}</span></td>
+                  <td><span class="institutions truncate has-tooltip" data-tooltip="${institutions}">${institutions}</span></td>
                   <td><span class="tag-pill ${tagClass}">${tag}</span></td>
+                  <td><div class="topic-tags">${topicTags}</div></td>
                   <td><span class="id-pill">${arxivId}</span></td>
                   <td class="date-cell">${published}</td>
                   <td class="links">
@@ -541,7 +793,7 @@
                   </td>
                 </tr>`;
             })
-            .join("") || `<tr><td colspan="6" class="empty">没有匹配结果</td></tr>`;
+            .join("") || `<tr><td colspan="8" class="empty">没有匹配结果</td></tr>`;
       }
 
       fetch("./data/zhipu_papers.json", { cache: "no-store" })
@@ -550,6 +802,9 @@
           state.rows = (data.rows || []).map((row) => ({
             ...row,
             tag: row.tag || "非产品相关",
+            topic_tags: Array.isArray(row.topic_tags) ? row.topic_tags : [],
+            institutions: Array.isArray(row.institutions) ? row.institutions : [],
+            abstract: row.abstract || "",
           }));
           state.summary = {
             ...(data.summary || {}),
@@ -560,6 +815,7 @@
           };
           renderStats(state.summary);
           renderYears(state.rows);
+          renderTopics(state.rows);
           render();
         })
         .catch((error) => {
@@ -568,7 +824,19 @@
 
       $("search").addEventListener("input", render);
       $("tag").addEventListener("change", render);
+      $("topic").addEventListener("change", render);
       $("year").addEventListener("change", render);
+      $("papers").addEventListener("click", (event) => {
+        const target = event.target.closest("[data-paper-id]");
+        if (target) {
+          openPreview(target.dataset.paperId);
+        }
+      });
+      $("paper-preview").addEventListener("click", (event) => {
+        if (event.target === $("paper-preview")) {
+          $("paper-preview").close();
+        }
+      });
       document.addEventListener("mouseover", (event) => {
         const target = event.target.closest("[data-tooltip]");
         if (target && target !== tooltipTarget) {

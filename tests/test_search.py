@@ -28,7 +28,9 @@ from search_papers import (
     matched_tsinghua_signals,
     normalize_relevant,
     normalize_sync_mode,
+    normalize_topic_tags,
     parse_feed,
+    row_from_candidate,
     validate_review_results,
 )
 
@@ -279,15 +281,50 @@ class RuleTests(TestCase):
                 "arxiv_id": "1",
                 "relevant": True,
                 "translated_title": "同一个标题",
+                "topic_tags": ["文本", "模型"],
+                "institutions": [],
             },
             {
                 "arxiv_id": "2",
                 "relevant": True,
                 "translated_title": "同一个标题",
+                "topic_tags": ["代码", "评测"],
+                "institutions": [],
             },
         ]
         with self.assertRaisesRegex(ValueError, "duplicate translations"):
             validate_review_results(results, ["1", "2"])
+
+    def test_topic_tags_are_deduplicated_and_limited_to_vocabulary(self) -> None:
+        self.assertEqual(
+            normalize_topic_tags(
+                ["文本", "模型", "文本", "unknown", "推理", "代码", "智能体", "评测"]
+            ),
+            ["文本", "模型", "推理", "代码", "智能体"],
+        )
+
+    def test_public_row_keeps_abstract_institutions_and_topic_tags(self) -> None:
+        paper = self.paper(
+            ("GLM Team",),
+            "GLM report",
+            abstract="A complete arXiv abstract.",
+        )
+        candidate = build_candidates({paper.arxiv_id: paper})[0]
+        row = row_from_candidate(
+            candidate,
+            {
+                "relevant": True,
+                "translated_title": "GLM 报告",
+                "tag": "产品相关",
+                "topic_tags": ["文本", "模型"],
+                "institutions": ["Z.AI", "Z.AI"],
+            },
+            paper,
+        )
+        self.assertEqual(row["abstract"], "A complete arXiv abstract.")
+        self.assertEqual(row["institutions"], ["Z.AI"])
+        self.assertEqual(row["topic_tags"], ["文本", "模型"])
+        self.assertTrue(row["metadata_enriched"])
 
     def test_verified_two_person_team_papers_are_preserved(self) -> None:
         self.assertIn(
@@ -398,3 +435,21 @@ class RuleTests(TestCase):
             [row["arxiv_id"] for row in merge_rows("incremental", old, new)],
             ["new", "old"],
         )
+
+    def test_incremental_merge_preserves_known_institutions(self) -> None:
+        existing = {
+            "1": {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "institutions": ["Z.AI"],
+            }
+        }
+        reviewed = [
+            {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "institutions": [],
+            }
+        ]
+        rows = merge_rows("incremental", existing, reviewed)
+        self.assertEqual(rows[0]["institutions"], ["Z.AI"])
