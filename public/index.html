@@ -72,16 +72,10 @@
       }
 
       h1 {
-        margin: 0 0 6px;
+        margin: 0;
         font-size: clamp(20px, 2.4vw, 28px);
         letter-spacing: -0.04em;
         line-height: 1.15;
-      }
-
-      .subtitle {
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.45;
       }
 
       main {
@@ -134,7 +128,7 @@
 
       .toolbar {
         display: grid;
-        grid-template-columns: 1fr 150px 150px;
+        grid-template-columns: minmax(240px, 1fr) 150px 150px 76px;
         gap: 8px;
         margin: 10px 0;
       }
@@ -155,19 +149,8 @@
         margin-bottom: 7px;
       }
 
-      .topic-filter-title {
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-      }
-
       .topic-filter-title b {
         font-size: 11.5px;
-      }
-
-      .topic-filter-title span {
-        color: var(--muted);
-        font-size: 10.5px;
       }
 
       .topic-filter-list {
@@ -247,6 +230,135 @@
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--ring);
         outline: none;
+      }
+
+      .action-button {
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 8px 12px;
+        background: white;
+        color: var(--foreground);
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .action-button:hover {
+        border-color: var(--accent-line);
+        background: var(--accent-soft);
+      }
+
+      .action-button:focus-visible {
+        outline: 2px solid #818cf8;
+        outline-offset: 2px;
+      }
+
+      .action-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      .export-toggle[aria-pressed="true"],
+      .export-download {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: white;
+      }
+
+      .export-toggle[aria-pressed="true"]:hover,
+      .export-download:hover:not(:disabled) {
+        border-color: #334155;
+        background: #334155;
+      }
+
+      .export-panel {
+        display: grid;
+        grid-template-columns: 150px minmax(420px, 1fr) 130px auto;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 10px;
+        border: 1px solid var(--accent-line);
+        border-radius: 10px;
+        padding: 10px;
+        background: var(--accent-soft);
+      }
+
+      .export-panel[hidden] {
+        display: none;
+      }
+
+      .export-panel fieldset {
+        min-width: 0;
+        margin: 0;
+        border: 0;
+        padding: 0;
+      }
+
+      .export-panel legend {
+        margin-bottom: 6px;
+        padding: 0;
+        color: var(--muted);
+        font-size: 10.5px;
+        font-weight: 650;
+      }
+
+      .export-selection,
+      .export-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .export-selection {
+        flex-wrap: wrap;
+      }
+
+      .export-selection b {
+        color: #4338ca;
+        font-size: 10.5px;
+        white-space: nowrap;
+      }
+
+      .check-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 12px;
+      }
+
+      .check-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .check-option input,
+      .paper-checkbox {
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        padding: 0;
+        accent-color: #4f46e5;
+      }
+
+      .paper-cell-layout {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .paper-cell-layout .paper-preview-button {
+        min-width: 0;
+      }
+
+      .paper-checkbox {
+        flex: 0 0 auto;
+        margin-top: 2px;
+      }
+
+      tbody tr.is-selected td {
+        background: #f5f3ff;
       }
 
       .table-wrap {
@@ -586,6 +698,11 @@
           grid-template-columns: 1fr;
         }
 
+        .export-panel {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
         .preview-meta {
           grid-template-columns: 1fr;
         }
@@ -607,12 +724,7 @@
       <div class="wrap">
         <div class="brand">
           <img class="brand-logo" src="./logo-cropped.png" alt="Z.AI" />
-          <div>
-            <h1>Z.AI arXiv 论文列表</h1>
-            <p class="subtitle">
-              基于作者身份、机构、产品与技术关系和 GLM 审核自动更新。页面只展示最终收录论文。
-            </p>
-          </div>
+          <h1>Z.AI arXiv 论文列表</h1>
         </div>
       </div>
     </header>
@@ -631,16 +743,44 @@
           <select id="year">
             <option value="">全部年份</option>
           </select>
+          <button class="action-button export-toggle" id="export-toggle" type="button"
+            aria-pressed="false" disabled>导出</button>
         </div>
         <div class="topic-filter-bar">
           <div class="topic-filter-header">
-            <div class="topic-filter-title">
-              <b>Tag 筛选</b>
-              <span>多选时同时包含全部 Tag</span>
-            </div>
+            <div class="topic-filter-title"><b>Tag 筛选</b></div>
             <button class="topic-clear" id="topic-clear" type="button" hidden>清除</button>
           </div>
           <div class="topic-filter-list" id="topic-filters"></div>
+        </div>
+        <div class="export-panel" id="export-panel" hidden>
+          <div class="export-selection">
+            <label class="check-option">
+              <input id="select-visible" type="checkbox" />
+              全选当前结果
+            </label>
+            <b id="selected-count">已选 0 篇</b>
+          </div>
+          <fieldset>
+            <legend>导出内容</legend>
+            <div class="check-options">
+              <label class="check-option"><input type="checkbox" name="export-field" value="title" checked />论文名</label>
+              <label class="check-option"><input type="checkbox" name="export-field" value="translated_title" checked />论文译名</label>
+              <label class="check-option"><input type="checkbox" name="export-field" value="authors" checked />作者</label>
+              <label class="check-option"><input type="checkbox" name="export-field" value="arxiv_url" checked />arXiv 链接</label>
+              <label class="check-option"><input type="checkbox" name="export-field" value="pdf_url" checked />PDF 链接</label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>文件格式</legend>
+            <div class="check-options">
+              <label class="check-option"><input type="radio" name="export-format" value="xlsx" checked />XLSX</label>
+              <label class="check-option"><input type="radio" name="export-format" value="docx" />DOCX</label>
+            </div>
+          </fieldset>
+          <div class="export-actions">
+            <button class="action-button export-download" id="export-download" type="button" disabled>下载</button>
+          </div>
         </div>
         <p class="meta" id="meta">加载中...</p>
         <div class="table-wrap">
@@ -715,8 +855,16 @@
       </div>
     </dialog>
 
+    <script src="./export.js"></script>
     <script>
-      const state = { rows: [], selectedTopics: new Set(), summary: {} };
+      const state = {
+        rows: [],
+        visibleRows: [],
+        selectedTopics: new Set(),
+        selectedPaperIds: new Set(),
+        summary: {},
+        exportMode: false,
+      };
       const $ = (id) => document.getElementById(id);
       let tooltipHideTimer = null;
       let tooltipTarget = null;
@@ -867,6 +1015,67 @@
         return "tag-academic";
       }
 
+      function updateExportControls() {
+        if (!state.exportMode) {
+          return;
+        }
+        const visibleIds = state.visibleRows.map((row) => row.arxiv_id);
+        const selectedVisible = visibleIds.filter((id) => state.selectedPaperIds.has(id)).length;
+        const selectVisible = $("select-visible");
+        selectVisible.checked = visibleIds.length > 0 && selectedVisible === visibleIds.length;
+        selectVisible.indeterminate = selectedVisible > 0 && selectedVisible < visibleIds.length;
+        selectVisible.disabled = visibleIds.length === 0;
+        $("selected-count").textContent = `已选 ${state.selectedPaperIds.size} 篇`;
+        $("export-download").disabled =
+          state.selectedPaperIds.size === 0 || selectedExportFields().length === 0;
+      }
+
+      function setExportMode(enabled) {
+        state.exportMode = enabled;
+        if (!enabled) {
+          state.selectedPaperIds.clear();
+        }
+        $("export-panel").hidden = !enabled;
+        $("export-toggle").setAttribute("aria-pressed", String(enabled));
+        $("export-toggle").textContent = enabled ? "完成" : "导出";
+        render();
+      }
+
+      function selectedExportFields() {
+        return [...document.querySelectorAll('input[name="export-field"]:checked')].map(
+          (input) => input.value
+        );
+      }
+
+      function exportSelectedPapers() {
+        const rows = state.rows.filter((row) => state.selectedPaperIds.has(row.arxiv_id));
+        const fields = selectedExportFields();
+        if (!rows.length || !fields.length) {
+          return;
+        }
+
+        const format = document.querySelector('input[name="export-format"]:checked').value;
+        const now = new Date();
+        const date = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+          .map((part) => String(part).padStart(2, "0"))
+          .join("-");
+        if (format === "docx") {
+          const file = OfficeExport.buildDocx(rows, fields);
+          OfficeExport.download(
+            file,
+            `zai-papers-${date}.docx`,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          );
+          return;
+        }
+        const file = OfficeExport.buildXlsx(rows, fields);
+        OfficeExport.download(
+          file,
+          `zai-papers-${date}.xlsx`,
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+      }
+
       function render() {
         const query = $("search").value.trim().toLowerCase();
         const year = $("year").value;
@@ -891,6 +1100,7 @@
             (!query || haystack.includes(query))
           );
         });
+        state.visibleRows = rows;
 
         $("meta").textContent = `显示 ${rows.length} / ${state.rows.length} 篇；更新于 ${
           state.summary.updated_at ? new Date(state.summary.updated_at).toLocaleString("zh-CN") : "未知"
@@ -916,15 +1126,23 @@
               const published = escapeHtml(row.published || "");
               const arxivUrl = escapeHtml(row.arxiv_url);
               const pdfUrl = escapeHtml(row.pdf_url);
+              const isSelected = state.selectedPaperIds.has(row.arxiv_id);
+              const checkbox = state.exportMode
+                ? `<input class="paper-checkbox" type="checkbox" data-select-paper="${arxivId}"
+                    aria-label="选择 ${title}" ${isSelected ? "checked" : ""} />`
+                : "";
               return `
-                <tr>
+                <tr class="${isSelected ? "is-selected" : ""}">
                   <td>
-                    <button class="paper-preview-button has-tooltip" type="button"
-                      data-paper-id="${arxivId}" data-tooltip="${titleTooltip}"
-                      aria-label="打开 ${title} 的论文概览">
-                      <span class="title truncate">${title}</span>
-                      <span class="translation truncate">${translatedTitle}</span>
-                    </button>
+                    <div class="paper-cell-layout">
+                      ${checkbox}
+                      <button class="paper-preview-button has-tooltip" type="button"
+                        data-paper-id="${arxivId}" data-tooltip="${titleTooltip}"
+                        aria-label="打开 ${title} 的论文概览">
+                        <span class="title truncate">${title}</span>
+                        <span class="translation truncate">${translatedTitle}</span>
+                      </button>
+                    </div>
                   </td>
                   <td><span class="authors truncate has-tooltip" data-tooltip="${authors}">${authors}</span></td>
                   <td><span class="institutions truncate has-tooltip" data-tooltip="${institutions}">${institutions}</span></td>
@@ -939,6 +1157,7 @@
                 </tr>`;
             })
             .join("") || `<tr><td colspan="8" class="empty">没有匹配结果</td></tr>`;
+        updateExportControls();
       }
 
       fetch("./data/zhipu_papers.json", { cache: "no-store" })
@@ -961,6 +1180,7 @@
           renderStats(state.summary);
           renderYears(state.rows);
           renderTopics(state.rows);
+          $("export-toggle").disabled = false;
           render();
         })
         .catch((error) => {
@@ -988,6 +1208,36 @@
         state.selectedTopics.clear();
         updateTopicFilters();
         render();
+      });
+      $("export-toggle").addEventListener("click", () => {
+        setExportMode(!state.exportMode);
+      });
+      $("select-visible").addEventListener("change", (event) => {
+        state.visibleRows.forEach((row) => {
+          if (event.target.checked) {
+            state.selectedPaperIds.add(row.arxiv_id);
+          } else {
+            state.selectedPaperIds.delete(row.arxiv_id);
+          }
+        });
+        render();
+      });
+      document.querySelectorAll('input[name="export-field"]').forEach((input) => {
+        input.addEventListener("change", updateExportControls);
+      });
+      $("export-download").addEventListener("click", exportSelectedPapers);
+      $("papers").addEventListener("change", (event) => {
+        const target = event.target.closest("[data-select-paper]");
+        if (!target) {
+          return;
+        }
+        if (target.checked) {
+          state.selectedPaperIds.add(target.dataset.selectPaper);
+        } else {
+          state.selectedPaperIds.delete(target.dataset.selectPaper);
+        }
+        target.closest("tr").classList.toggle("is-selected", target.checked);
+        updateExportControls();
       });
       $("papers").addEventListener("click", (event) => {
         const target = event.target.closest("[data-paper-id]");
