@@ -1,12 +1,32 @@
 {
   "summary": {
-    "updated_at": "2026-07-13T09:24:39.800801+00:00",
-    "final_count": 202,
+    "updated_at": "2026-07-14T03:50:21.340010+00:00",
+    "final_count": 203,
     "product_related": 30,
     "product_support": 17,
-    "academic_output": 155
+    "academic_output": 156
   },
   "rows": [
+    {
+      "arxiv_id": "2607.11185",
+      "title": "SCALECUA: Scaling Computer Use Agents with Verifiable Task Synthesis and Efficient Online RL",
+      "authors": "Bowen Lv, Xiao Liu, Yanyu Ren, Hanyu Lai, Bohao Jing, Hanchen Zhang, Yanxiao Zhao, Shuntian Yao, Jie Tang, Yuxiao Dong",
+      "translated_title": "ScaleCUA：通过可验证任务合成与高效在线强化学习扩展计算机使用智能体",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "智能体",
+        "多模态",
+        "强化学习",
+        "训练系统",
+        "Benchmark"
+      ],
+      "institutions": [],
+      "abstract": "Computer use agents (CUAs) are emerging as a powerful interface for automating complex digital workflows through visual perception and GUI execution. Online reinforcement learning with verifiable rewards (RLVR) has emerged as a key direction for scaling their capabilities. However, this paradigm is bottlenecked by verifiable data scarcity and online RL inefficiency. To break these barriers, we introduce ScaleCUA, a unified framework that scales online RL for CUAs via verifiable task synthesis and efficient training. At the data level, we design VeriGen, an end-to-end framework for generating verifiable RL tasks through iterative docker interactions and a multi-agent feedback loop. Scaled to 100+ concurrent agent workers via a shared docker interaction probe, this pipeline produces 24K+ verifiable tasks and nearly 3K high-quality RL tasks. To maximize sample efficiency, we propose Frontier Sampling, which tracks per-task capability and allocates rollouts to the current learning frontier. On the training side, we further design Visual Context Segmentation, a sliding window over recent visual context that balances rollout and training-engine pressure, yielding a 2.83x training speedup over step-wise decomposition. Together, ScaleCUA achieves 68.7% on OSWorld and 54.0% on ScienceBoard, establishing new state-of-the-art performance among open-source computer use agents. Code, models, and datasets are available at https://github.com/THUDM/SCALE-CUA.",
+      "metadata_enriched": true,
+      "published": "2026-07-13",
+      "pdf_url": "https://arxiv.org/pdf/2607.11185v1",
+      "arxiv_url": "https://arxiv.org/abs/2607.11185v1"
+    },
     {
       "arxiv_id": "2607.07508",
       "title": "Single-Rollout Asynchronous Optimization for Agentic Reinforcement Learning",
