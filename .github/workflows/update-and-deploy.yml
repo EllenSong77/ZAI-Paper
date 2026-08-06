@@ -55,7 +55,7 @@ jobs:
         run: python search_papers.py
         env:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
-          ZHIPU_CLASSIFIER_MODEL: glm-5-turbo
+          ZHIPU_CLASSIFIER_MODEL: glm-4.7-flash
           ARXIV_SYNC_MODE: ${{ github.event.inputs.sync_mode || 'incremental' }}
 
       - name: Commit updated data
