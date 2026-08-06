@@ -1,24 +1,60 @@
 {
   "summary": {
-    "updated_at": "2026-07-23T04:01:34.012344+00:00",
-    "final_count": 203,
+    "updated_at": "2026-08-06T09:44:45.696177+00:00",
+    "final_count": 206,
     "product_related": 30,
     "product_support": 17,
-    "academic_output": 156
+    "academic_output": 159
   },
   "rows": [
+    {
+      "arxiv_id": "2608.01460",
+      "title": "Conformalized Large Language Models under Configuration Shift",
+      "authors": "Yuqicheng Zhu, Jialin Yu, Lin Li, Gengyuan Zhang, Zhen Yang, Steffen Staab, Puneet Dokania, Philip Torr, Jie Tang, Evgeny Kharlamov",
+      "translated_title": "配置偏移下的共形化大语言模型",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "文本",
+        "模型",
+        "推理",
+        "评测"
+      ],
+      "institutions": [],
+      "abstract": "Conformal prediction (CP) is a distribution-free framework for uncertainty quantification that has recently been adapted to large language models (LLMs), providing prediction sets with finite-sample coverage guarantees under exchangeability. Yet for LLMs, nonconformity scores are often induced by an inference pipeline, not just a fixed model, making them depend not only on the data distribution but also on configurable factors such as the prompt template, decoding parameters, and deployment setting. Since such configurations are routinely modified in practice but rarely treated as a source of shift, their impact on CP validity remains poorly understood. We call this \\emph{configuration shift} and study it systematically along three axes: prompt template, decoding temperature, and weight quantization. In a broad empirical study spanning $9$ LLMs, $4$ datasets, and $4$ nonconformity scores, we find that configuration shift consistently erodes CP validity, often driving empirical coverage below the target. By contrast, efficiency is largely preserved: valid prediction sets remain close in size to the i.i.d. baseline. We derive coverage lower bounds that attribute this loss to a discrepancy between calibration and test score distributions, and use their finite-sample plug-in versions as empirical diagnostics of shift severity. We further show that these findings lead to practical mitigations: bound-inspired recalibration is effective with limited test examples, while fragility-aware calibration ensembling recovers much of the lost coverage without test data.",
+      "metadata_enriched": true,
+      "published": "2026-08-02",
+      "pdf_url": "https://arxiv.org/pdf/2608.01460v1",
+      "arxiv_url": "https://arxiv.org/abs/2608.01460v1"
+    },
+    {
+      "arxiv_id": "2607.25380",
+      "title": "Memory for Large Language Models",
+      "authors": "Sining Zhoubian, Dan Zhang, Evgeny Kharlamov, Jie Tang",
+      "translated_title": "大语言模型的记忆机制",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "文本",
+        "模型",
+        "综述"
+      ],
+      "institutions": [],
+      "abstract": "Memory has evolved into a foundational architectural dimension in large language models (LLMs), shifting from an implicit byproduct of computation to a spectrum of explicit, controllable mechanisms. While recent advances introduce diverse strategies---spanning transient attention, recurrent state dynamics, parameter-efficient adaptations, and scalable lookup storage---this rapid evolution has led to a highly fragmented research landscape. In this survey, we present a systematic, architecture-centric taxonomy of memory in LLMs. Our framework characterizes memory along three orthogonal axes: representation (implicit versus explicit), update dynamics (offline versus online), and persistence (short-term versus long-term). We further formalize the granular mechanisms dictating memory writing, routing, state transitions, and consolidation. This unified perspective elucidates the conceptual boundaries between computation-coupled and independently addressable memory, effectively bridging disparate architectural paradigms. Additionally, we critically analyze hybrid memory architectures, system-level efficiency trade-offs, and multi-dimensional evaluation methodologies. By consolidating these scattered advancements into a cohesive framework, this survey charts the trajectory of memory-centric LLM design and provides a principled foundation for future innovations in scalable and adaptive language modeling.",
+      "metadata_enriched": true,
+      "published": "2026-07-28",
+      "pdf_url": "https://arxiv.org/pdf/2607.25380v1",
+      "arxiv_url": "https://arxiv.org/abs/2607.25380v1"
+    },
     {
       "arxiv_id": "2607.11185",
       "title": "SCALECUA: Scaling Computer Use Agents with Verifiable Task Synthesis and Efficient Online RL",
       "authors": "Bowen Lv, Xiao Liu, Yanyu Ren, Hanyu Lai, Bohao Jing, Hanchen Zhang, Yanxiao Zhao, Shuntian Yao, Jie Tang, Yuxiao Dong",
-      "translated_title": "ScaleCUA：通过可验证任务合成与高效在线强化学习扩展计算机使用智能体",
+      "translated_title": "SCALECUA：基于可验证任务合成与高效在线强化学习的计算机使用智能体扩展",
       "tag": "非产品相关",
       "topic_tags": [
-        "智能体",
         "多模态",
+        "智能体",
         "强化学习",
-        "训练系统",
-        "Benchmark"
+        "训练系统"
       ],
       "institutions": [
         "University of Chinese Academy of Sciences"
@@ -33,14 +69,13 @@
       "arxiv_id": "2607.07508",
       "title": "Single-Rollout Asynchronous Optimization for Agentic Reinforcement Learning",
       "authors": "Zhenyu Hou, Yujiang Li, Jie Tang, Yuxiao Dong",
-      "translated_title": "面向智能体强化学习的单轨迹异步优化",
+      "translated_title": "面向智能体强化学习的单次展开异步优化",
       "tag": "产品技术支持",
       "topic_tags": [
+        "文本",
         "智能体",
         "强化学习",
-        "后训练",
-        "推理",
-        "Benchmark"
+        "训练系统"
       ],
       "institutions": [],
       "abstract": "Reinforcement learning (RL) is becoming increasingly important for post-training large language models (LLMs). Previous RL pipelines for LLMs were mostly synchronous and batch-interleaved, which is inefficient for long-horizon agentic tasks. Recently, asynchronous RL has emerged as a more efficient alternative by updating the model as rollouts arrive. However, existing asynchronous RL systems often emphasize throughput, while leaving training stability and task effectiveness largely underexplored. For example, a key challenge is that group-wise sampling in the widely-used GRPO framework does not naturally fit asynchronous agentic training. In this paper, we present Single-rollout Asynchronous Optimization (SAO) to address the stability and off-policy challenges in asynchronous RL. To reduce off-policy effects and improve generalization, we replace group-wise sampling with single-rollout sampling, that is, using one rollout per prompt. We further improve this single-rollout strategy with practical value-model training designs. To improve optimization stability, we introduce a strict double-side token-level clipping strategy. SAO is able to train stably for one thousand steps and consistently outperform GRPO and its variants on agentic coding and reasoning benchmarks, such as SWE-Bench Verified, BeyondAIME, and IMOAnswerBench. We also demonstrate that single-rollout RL is particularly effective in a simulated online learning setting, where the model must adapt to changing evolving environments. To this end, SAO is successfully deployed in the agentic RL pipeline for training the open GLM-5.2 model (750B-A40B).",
@@ -56,11 +91,10 @@
       "translated_title": "CompactionRL：面向长程智能体的上下文压缩强化学习",
       "tag": "产品技术支持",
       "topic_tags": [
+        "文本",
         "智能体",
         "强化学习",
-        "后训练",
-        "推理",
-        "代码"
+        "训练系统"
       ],
       "institutions": [],
       "abstract": "Long-horizon agentic LLMs are increasingly limited by finite context windows, as extended interaction trajectories can exceed the maximum context length before a task is completed. Context compaction offers a natural solution by summarizing previous interaction states and continuing the rollout under a compressed context, but incorporating compaction into reinforcement learning remains underexplored. We propose CompactionRL, a reinforcement learning strategy to train long-horizon agentic LLMs with context compaction. Our approach jointly optimizes task execution and summary generation with token-level loss normalization and cross-trajectory generalized advantage estimation. This design enables the LLM agents to learn from compacted long-horizon trajectories. We train CompactionRL on top of open models and observe consistent performance gains on agentic coding tasks. CompactionRL enables the open GLM-4.5-Air model (106B-A30B) to achieve Pass@1 scores of 66.8% on SWE-bench Verified and 24.5% on Terminal-Bench 2.0, with absolute gains of 7.0 and 3.1 points, respectively. Built upon GLM-4.7-Flash (30B-A3B), CompactionRL improves Pass@1 by 5.5 and 6.8 points, reaching 56.0% on SWE-bench Verified and 20.2% on Terminal-Bench 2.0, respectively. CompactionRL is thus deployed in the RL pipeline for training the open GLM-5.2 model (750B-A40B).",
@@ -68,6 +102,24 @@
       "published": "2026-07-06",
       "pdf_url": "https://arxiv.org/pdf/2607.05378v1",
       "arxiv_url": "https://arxiv.org/abs/2607.05378v1"
+    },
+    {
+      "arxiv_id": "2607.04609",
+      "title": "SEAM: Smooth Execution of Action-Chunked Motion for Vision-Language-Action Policies",
+      "authors": "Dijia Zhan, Xuemiao Xu, Jinyi Li, Jie Tang",
+      "translated_title": "SEAM：视觉-语言-动作策略的动作分块运动平滑执行",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "多模态",
+        "智能体",
+        "推理"
+      ],
+      "institutions": [],
+      "abstract": "Vision-Language-Action (VLA) policies that execute fixed-length action chunks can exhibit multimodal bifurcation: a cross-chunk inconsistency in which adjacent chunks generated from independent Gaussian latents can converge to incompatible trajectory modes, producing abrupt discontinuities at chunk boundaries. Existing remedies either require backpropagation through the policy at each denoising step, rely on rejection sampling, or require retraining, each trading computational cost or task reliability for smoother transitions. We propose SEAM (Smooth Execution of Action-Chunked Motion), a training-free inference-time method for flow matching VLAs. SEAM exploits a simple synchronous-execution insight: after the robot consumes the executed prefix, the previous chunk's unexecuted tail is already available as an analytic consistency reference. Its core mechanism, Velocity-guided Loss Steering (VLS), derives a time-dependent target from this tail and applies a closed-form correction after each Euler step without backpropagating through the policy network. On LIBERO-10 with pi_0.5, SEAM reduces boundary jerk by 28%, reduces chunk transition discontinuity by 27%, preserves baseline-level task success, and keeps denoising-loop cost near the unguided baseline.",
+      "metadata_enriched": true,
+      "published": "2026-07-06",
+      "pdf_url": "https://arxiv.org/pdf/2607.04609v1",
+      "arxiv_url": "https://arxiv.org/abs/2607.04609v1"
     },
     {
       "arxiv_id": "2606.20711",
