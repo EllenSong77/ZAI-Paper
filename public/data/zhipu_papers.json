@@ -1,6 +1,6 @@
 {
   "summary": {
-    "updated_at": "2026-08-07T02:53:15.688366+00:00",
+    "updated_at": "2026-08-07T03:42:02.811908+00:00",
     "final_count": 206,
     "product_related": 30,
     "product_support": 17,
@@ -11,13 +11,14 @@
       "arxiv_id": "2608.01460",
       "title": "Conformalized Large Language Models under Configuration Shift",
       "authors": "Yuqicheng Zhu, Jialin Yu, Lin Li, Gengyuan Zhang, Zhen Yang, Steffen Staab, Puneet Dokania, Philip Torr, Jie Tang, Evgeny Kharlamov",
-      "translated_title": "配置偏移下的共形化大语言模型",
+      "translated_title": "配置偏移下的保形大语言模型",
       "tag": "非产品相关",
       "topic_tags": [
         "文本",
         "模型",
         "推理",
-        "评测"
+        "评测",
+        "安全"
       ],
       "institutions": [],
       "abstract": "Conformal prediction (CP) is a distribution-free framework for uncertainty quantification that has recently been adapted to large language models (LLMs), providing prediction sets with finite-sample coverage guarantees under exchangeability. Yet for LLMs, nonconformity scores are often induced by an inference pipeline, not just a fixed model, making them depend not only on the data distribution but also on configurable factors such as the prompt template, decoding parameters, and deployment setting. Since such configurations are routinely modified in practice but rarely treated as a source of shift, their impact on CP validity remains poorly understood. We call this \\emph{configuration shift} and study it systematically along three axes: prompt template, decoding temperature, and weight quantization. In a broad empirical study spanning $9$ LLMs, $4$ datasets, and $4$ nonconformity scores, we find that configuration shift consistently erodes CP validity, often driving empirical coverage below the target. By contrast, efficiency is largely preserved: valid prediction sets remain close in size to the i.i.d. baseline. We derive coverage lower bounds that attribute this loss to a discrepancy between calibration and test score distributions, and use their finite-sample plug-in versions as empirical diagnostics of shift severity. We further show that these findings lead to practical mitigations: bound-inspired recalibration is effective with limited test examples, while fragility-aware calibration ensembling recovers much of the lost coverage without test data.",
@@ -35,7 +36,8 @@
       "topic_tags": [
         "文本",
         "模型",
-        "综述"
+        "综述",
+        "推理系统"
       ],
       "institutions": [],
       "abstract": "Memory has evolved into a foundational architectural dimension in large language models (LLMs), shifting from an implicit byproduct of computation to a spectrum of explicit, controllable mechanisms. While recent advances introduce diverse strategies---spanning transient attention, recurrent state dynamics, parameter-efficient adaptations, and scalable lookup storage---this rapid evolution has led to a highly fragmented research landscape. In this survey, we present a systematic, architecture-centric taxonomy of memory in LLMs. Our framework characterizes memory along three orthogonal axes: representation (implicit versus explicit), update dynamics (offline versus online), and persistence (short-term versus long-term). We further formalize the granular mechanisms dictating memory writing, routing, state transitions, and consolidation. This unified perspective elucidates the conceptual boundaries between computation-coupled and independently addressable memory, effectively bridging disparate architectural paradigms. Additionally, we critically analyze hybrid memory architectures, system-level efficiency trade-offs, and multi-dimensional evaluation methodologies. By consolidating these scattered advancements into a cohesive framework, this survey charts the trajectory of memory-centric LLM design and provides a principled foundation for future innovations in scalable and adaptive language modeling.",
