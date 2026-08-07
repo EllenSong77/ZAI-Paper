@@ -10,8 +10,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 
-from search_papers import (
-    VERIFIED_TITLES,
+from config import VERIFIED_TITLES
+from main import (
     Paper,
     approved_rows,
     arxiv_queries,
