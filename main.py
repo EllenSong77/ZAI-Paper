@@ -7,6 +7,7 @@ the approved rows for the static website.
 
 Author:
     Ellen Song <jiaqi.song@z.ai>
+    Modified by Wethepe <dongyangyan@stu.pku.edu.cn>
 """
 
 from __future__ import annotations
@@ -774,6 +775,10 @@ def prompt(items: list[dict]) -> str:
         "研究对象或模态，并尽量覆盖能力、训练方法、工程技术或成果形式。"
         "不要创造新标签。固定词表："
         f"{'、'.join(TOPIC_TAGS)}。\n\n"
+        "摘要翻译：把每个 abstract 翻译成中文，保留作者称为中文习惯"
+        "（如第一人称转第三人称），不要补充评论，不要保留英文术语时"
+        "只保留英文术语本身（如 Transformer 可不译）。原文已经包含中文"
+        "或为空时，translated_abstract 直接返回原文或空字符串。\n\n"
         "机构：只能从 author_affiliations 和 external_affiliations 给出的候选"
         "信息中提取真实大学、研究机构或公司名称；去掉院系、研究方向、职位"
         "和明显不是机构的描述。不得根据作者或论文内容猜测机构；无法确认时"
@@ -781,10 +786,12 @@ def prompt(items: list[dict]) -> str:
         f"指定作者：{people}。\n"
         "只返回与输入顺序一致的 JSON 数组：\n"
         '[{"arxiv_id":"编号","relevant":true,'
-        '"translated_title":"中文标题","tag":"产品相关",'
+        '"translated_title":"中文标题","translated_abstract":"中文摘要",'
+        '"tag":"产品相关",'
         '"topic_tags":["文本","模型"],'
         '"institutions":["Tsinghua University"]}]\n'
-        "relevant 必须是 JSON 布尔值；translated_title 非空；tag 只能是"
+        "relevant 必须是 JSON 布尔值；translated_title 非空；translated_abstract"
+        "为字符串（原文为空时也用空字符串）；tag 只能是"
         "“产品相关”“产品技术支持”“非产品相关”；topic_tags 必须包含 2 到 5"
         "个固定词表标签；institutions 必须是 JSON 数组。\n\n"
         f"{json.dumps(items, ensure_ascii=False)}\n"
@@ -898,10 +905,12 @@ def review_and_translate(
 
         for source, result in zip(batch, results, strict=True):
             translation = str(result.get("translated_title", "")).strip()
+            abstract_zh = str(result.get("translated_abstract", "")).strip()
             cache[source["arxiv_id"]] = {
                 "fingerprint": fingerprints[source["arxiv_id"]],
                 "relevant": normalize_relevant(result.get("relevant")),
                 "translated_title": translation,
+                "translated_abstract": abstract_zh,
                 "tag": normalize_tag(result.get("tag"), source["fallback_tag"]),
                 "topic_tags": normalize_topic_tags(result.get("topic_tags")),
                 "institutions": normalize_institutions(
@@ -1048,6 +1057,7 @@ def row_from_candidate(candidate: dict, review: dict, paper: Paper) -> dict:
         "title": paper.title,
         "authors": ", ".join(paper.authors),
         "translated_title": review["translated_title"],
+        "translated_abstract": review.get("translated_abstract", ""),
         "tag": tag,
         "topic_tags": normalize_topic_tags(review.get("topic_tags")),
         "institutions": normalize_institutions(review.get("institutions")),
