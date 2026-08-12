@@ -132,47 +132,22 @@ def _paper_columns(row: dict[str, Any], index: int, total: int) -> list[dict[str
             chips_parts.append(_text_tags(clean_topics, color=TAG_COLOR_TOPIC))
     right_elements.append(_markdown(" ".join(chips_parts)))
 
-    # Collapsible abstract with a clearer call-to-action title. Background uses
-    # blue tint to make it look actionable rather than disabled. When a Chinese
-    # translation is available (``translated_abstract``), it is shown below the
-    # English original under a labeled divider; when it is missing, the panel
-    # degrades gracefully to English-only with no layout change.
+    # Abstract area: a collapsible_panel titled "查看论文摘要" (collapsed by
+    # default) whose body shows the Chinese abstract only. The original
+    # English abstract is dropped from the card -- the audience is primarily
+    # Chinese-speaking, so the Chinese translation is the more useful reading
+    # copy. When translated_abstract is missing for a row, the panel falls
+    # back to the English abstract so the body is never empty.
+    #
+    # Degradation rules:
+    #   - abstract AND translated_abstract both empty  -> render no panel;
+    #   - translated_abstract empty, abstract present  -> single EN div;
+    #   - translated_abstract present                  -> single ZH div.
     translated_abstract = " ".join(
         (row.get("translated_abstract") or "").split()
     )
-    if abstract:
-        panel_elements: list[dict[str, Any]] = [{
-            "tag": "div",
-            "margin": "0px",
-            "width": "fill",
-            "text": {
-                "content": _truncate(abstract, 600),
-                "tag": "plain_text",
-                "text_align": "left",
-                "text_color": "default",
-                "text_size": "notation",
-            },
-        }]
-        if translated_abstract:
-            # Labeled divider between English original and Chinese translation.
-            panel_elements.append(
-                _markdown(
-                    "<font color='blue'>**中文翻译**</font>",
-                    size="notation",
-                )
-            )
-            panel_elements.append({
-                "tag": "div",
-                "margin": "0px",
-                "width": "fill",
-                "text": {
-                    "content": _truncate(translated_abstract, 600),
-                    "tag": "plain_text",
-                    "text_align": "left",
-                    "text_color": "default",
-                    "text_size": "notation",
-                },
-            })
+    body_text = translated_abstract or abstract
+    if body_text:
         right_elements.append({
             "tag": "collapsible_panel",
             "border": {"color": "grey", "corner_radius": "6px"},
@@ -180,12 +155,23 @@ def _paper_columns(row: dict[str, Any], index: int, total: int) -> list[dict[str
             "header": {
                 "padding": "4px",
                 "position": "top",
-                "title": {"content": "点击查看完整摘要", "tag": "plain_text"},
+                "title": {"content": "查看论文摘要", "tag": "plain_text"},
                 "width": "fill",
             },
             "margin": "6px 0px 0px 0px",
             "padding": "8px",
-            "elements": panel_elements,
+            "elements": [{
+                "tag": "div",
+                "margin": "0px",
+                "width": "fill",
+                "text": {
+                    "content": _truncate(body_text, 600),
+                    "tag": "plain_text",
+                    "text_align": "left",
+                    "text_color": "default",
+                    "text_size": "notation",
+                },
+            }],
         })
 
     # Buttons row: arXiv (primary) + PDF (when available). CardKit lays out

@@ -400,14 +400,17 @@ class CardsTests(TestCase):
         # Abstract is truncated to ~600 chars; the spam marker (8 chars each)
         # could survive at most 75 repetitions, so 100 repetitions is forbidden.
         self.assertNotIn("xUNIQUEx" * 100, body)
-        # The actionable "click to expand" CTA must be present.
-        self.assertIn("点击查看完整摘要", body)
+        # The collapsible_panel header label must be present.
+        self.assertIn("查看论文摘要", body)
 
     def test_bilingual_abstract_panel(self):
-        """Panel shows EN then ZH when translation is present, EN-only when not."""
+        """The panel body shows the Chinese abstract when translation is
+        present, falls back to the English abstract when not."""
         rows = sample_rows()
-        # Case 1: translation present -> panel contains EN + a ZH divider + ZH.
+        # Case 1: translation present -> panel body is the Chinese abstract,
+        # NOT the English one.
         with_zh = dict(rows[0])
+        with_zh["abstract"] = "english original abstract text for case one"
         with_zh["translated_abstract"] = "这是中文翻译的摘要。"
         card = cards.build_papers_card([with_zh], "https://site/")
         panel = next(
@@ -415,15 +418,21 @@ class CardsTests(TestCase):
             for e in card["body"]["elements"][0]["columns"][1]["elements"]
             if e.get("tag") == "collapsible_panel"
         )
+        # Panel is collapsed by default.
+        self.assertFalse(panel["expanded"])
+        self.assertEqual(panel["header"]["title"]["content"], "查看论文摘要")
+        # Exactly one div, containing the Chinese abstract.
+        divs = [e for e in panel["elements"] if e.get("tag") == "div"]
+        self.assertEqual(len(divs), 1)
+        self.assertEqual(divs[0]["text"]["content"], with_zh["translated_abstract"])
         body_zh = json.dumps(panel, ensure_ascii=False)
-        self.assertIn(with_zh["translated_abstract"], body_zh)
-        self.assertIn("中文翻译", body_zh)
-        # Panel must contain two text divs (EN + ZH) plus the divider markdown.
-        div_count = sum(1 for e in panel["elements"] if e.get("tag") == "div")
-        self.assertEqual(div_count, 2)
+        # English abstract must NOT be in the panel when ZH is available.
+        self.assertNotIn("english original abstract", body_zh)
 
-        # Case 2: no translation -> panel degrades to EN-only, no ZH divider.
+        # Case 2: no translation -> panel body falls back to the English
+        # abstract (and still has the right CTA header).
         no_zh = dict(rows[0])
+        no_zh["abstract"] = "english original abstract text for case two"
         no_zh["translated_abstract"] = ""
         card2 = cards.build_papers_card([no_zh], "https://site/")
         panel2 = next(
@@ -431,10 +440,9 @@ class CardsTests(TestCase):
             for e in card2["body"]["elements"][0]["columns"][1]["elements"]
             if e.get("tag") == "collapsible_panel"
         )
-        body2 = json.dumps(panel2, ensure_ascii=False)
-        self.assertNotIn("中文翻译", body2)
-        div_count2 = sum(1 for e in panel2["elements"] if e.get("tag") == "div")
-        self.assertEqual(div_count2, 1)
+        divs2 = [e for e in panel2["elements"] if e.get("tag") == "div"]
+        self.assertEqual(len(divs2), 1)
+        self.assertEqual(divs2[0]["text"]["content"], no_zh["abstract"])
 
     def test_empty_fields_rendered_without_placeholder(self):
         empty_row = sample_rows()[2]  # missing translated_title/tag/abstract
@@ -496,20 +504,24 @@ class CardsTests(TestCase):
         # so they render side by side; verify both buttons & their behaviors.
         # Each inner column is width "auto" so the buttons stay compact (only
         # as wide as their label) rather than stretched to half the card.
-        button_rows = [e for e in first_right if e.get("tag") == "column_set"]
-        self.assertEqual(len(button_rows), 1)
-        self.assertEqual(button_rows[0]["flex_mode"], "none")
-        nested_buttons_cols = button_rows[0]["columns"]
+        button_sets = [
+            e for e in first_right
+            if e.get("tag") == "column_set" and e.get("flex_mode") == "none"
+        ]
+        self.assertEqual(len(button_sets), 1)
+        nested_buttons_cols = button_sets[0]["columns"]
         self.assertTrue(all(c["width"] == "auto" for c in nested_buttons_cols))
         nested_buttons = [col["elements"][0] for col in nested_buttons_cols]
         button_labels = [b["text"]["content"] for b in nested_buttons]
         self.assertEqual(button_labels, ["查看 arXiv", "查看 PDF"])
         self.assertEqual(nested_buttons[0]["behaviors"][0]["default_url"], first["arxiv_url"])
         self.assertEqual(nested_buttons[1]["behaviors"][0]["default_url"], first["pdf_url"])
-        # Collapsible abstract panel exists and starts collapsed.
+        # The "查看论文摘要" collapsible_panel exists and is collapsed by default;
+        # click to expand reveals the Chinese abstract (or EN fallback).
         panels = [e for e in first_right if e.get("tag") == "collapsible_panel"]
         self.assertEqual(len(panels), 1)
         self.assertFalse(panels[0]["expanded"])
+        self.assertEqual(panels[0]["header"]["title"]["content"], "查看论文摘要")
 
 
 # ---------------------------------------------------------------------------
