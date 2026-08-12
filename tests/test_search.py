@@ -273,7 +273,7 @@ class RuleTests(TestCase):
                 "published": "2026-07-07",
             }
         }
-        self.assertEqual(merge_rows("incremental", existing, []), [])
+        self.assertEqual(merge_rows("incremental", existing, []), ([], []))
 
         system_card = self.paper(
             ("Jie Tang",),
@@ -507,11 +507,11 @@ class RuleTests(TestCase):
         }
         new = [{"arxiv_id": "new", "published": "2026-01-01"}]
         self.assertEqual(
-            [row["arxiv_id"] for row in merge_rows("full", old, new)],
+            [row["arxiv_id"] for row in merge_rows("full", old, new)[0]],
             ["new"],
         )
         self.assertEqual(
-            [row["arxiv_id"] for row in merge_rows("incremental", old, new)],
+            [row["arxiv_id"] for row in merge_rows("incremental", old, new)[0]],
             ["new", "old"],
         )
 
@@ -530,7 +530,7 @@ class RuleTests(TestCase):
                 "institutions": [],
             }
         ]
-        rows = merge_rows("incremental", existing, reviewed)
+        rows, _new_ids = merge_rows("incremental", existing, reviewed)
         self.assertEqual(rows[0]["institutions"], ["Z.AI"])
 
     def test_incremental_merge_preserves_backfilled_abstract(self) -> None:

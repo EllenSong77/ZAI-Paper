@@ -1,4 +1,7 @@
-# Updates arXiv data and deploys the static GitHub Pages site.
+# Synchronizes arXiv data, deploys the Pages site, and (optionally) pushes
+# Feishu paper notifications. The pipeline is split into three jobs so that a
+# notification failure can never roll back a successful Pages deployment, and so
+# that production notifications only run after the site is live.
 # Author: Ellen Song <jiaqi.song@z.ai>
 
 name: Update and deploy Pages
@@ -7,6 +10,10 @@ on:
   push:
     branches:
       - main
+    # Guard against dispatch loops: state commits made by the notify job are
+    # (a) tagged [skip ci] and (b) ignored here as belt-and-suspenders.
+    paths-ignore:
+      - ".notification-state/**"
   workflow_dispatch:
     inputs:
       sync_mode:
@@ -17,24 +24,34 @@ on:
         options:
           - incremental
           - full
+      notification_mode:
+        description: "Feishu notification mode (none/dry-run/smoke-test/bootstrap/send)"
+        required: true
+        default: "none"
+        type: choice
+        options:
+          - none
+          - dry-run
+          - smoke-test
+          - bootstrap
+          - send
   schedule:
     - cron: "0 1 * * *"
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
 concurrency:
+  # A single shared group prevents overlapping sync, deploy, and notify runs
+  # from racing on the papers JSON or the notification state file.
   group: pages
   cancel-in-progress: false
 
 jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. update — sync arXiv, run tests, commit data, upload Pages artifact.
+  # ───────────────────────────────────────────────────────────────────────────
   update:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +68,9 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - name: Run unittest suite
+        run: python -m unittest discover -s tests -v
+
       - name: Update paper data
         run: python main.py
         env:
@@ -66,8 +86,20 @@ jobs:
           if git diff --cached --quiet; then
             echo "No paper updates."
           else
-            git commit -m "Update arXiv paper data"
-            git push
+            git commit -m "Update arXiv paper data [skip ci]"
+            # Non-destructive push with a couple of retries to absorb a
+            # concurrent state-file commit from another dispatcher.
+            for attempt in 1 2 3; do
+              git pull --rebase origin "$GITHUB_REF_NAME" || true
+              if git push; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "git push failed after $attempt attempts" >&2
+                exit 1
+              fi
+              sleep 5
+            done
           fi
 
       - uses: actions/configure-pages@v5
@@ -76,5 +108,137 @@ jobs:
         with:
           path: public
 
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. deploy — publish the Pages artifact. Exposes page_url to notify.
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. notify — run the requested Feishu notification mode, then commit state.
+  # ───────────────────────────────────────────────────────────────────────────
+  notify:
+    needs: [update, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Resolve which mode to run: explicit dispatch input first, then the
+    # schedule gate (FEISHU_NOTIFICATIONS_ENABLED), otherwise none.
+    env:
+      NOTIFICATION_MODE: >-
+        ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.notification_mode || (
+          github.event_name == 'schedule' && (vars.FEISHU_NOTIFICATIONS_ENABLED == 'true' && 'send' || 'none') || 'none') }}
+    steps:
+      - name: Skip when no notification mode is active
+        if: env.NOTIFICATION_MODE == 'none' || env.NOTIFICATION_MODE == ''
+        run: echo "NOTIFICATION_MODE=${NOTIFICATION_MODE}; nothing to do."
+
+      - name: Sanity-check required Secrets presence (without printing values)
+        # dry-run / bootstrap never call Feishu, so they only need the target
+        # list. smoke-test / send must also have App ID + App Secret.
+        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
+        env:
+          APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          TARGETS_JSON: ${{ secrets.FEISHU_TARGETS_JSON }}
+        run: |
+          missing=()
+          [ -z "$TARGETS_JSON" ] && missing+=("FEISHU_TARGETS_JSON")
+          case "$NOTIFICATION_MODE" in
+            smoke-test|send)
+              [ -z "$APP_ID" ] && missing+=("FEISHU_APP_ID")
+              [ -z "$APP_SECRET" ] && missing+=("FEISHU_APP_SECRET")
+              ;;
+          esac
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing required Secrets for mode '${NOTIFICATION_MODE}': ${missing[*]} (configure them before enabling this mode)" >&2
+            exit 1
+          fi
+          echo "All required Feishu Secrets for mode '${NOTIFICATION_MODE}' are present."
+
+      - name: Checkout latest target branch
+        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
+        uses: actions/checkout@v4
+        with:
+          # Always resolve the branch HEAD at run time. The default ref is the
+          # original github.sha, but the update job may have pushed new commits
+          # to main (papers JSON + state), and notify must read that latest
+          # tree rather than a stale snapshot.
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Ensure working tree matches latest branch HEAD
+        # Belt-and-suspenders for non-fast-forward: pull the exact branch tip
+        # fast-forward only. If a concurrent run won the race, this step fails
+        # the job loudly instead of operating on a stale base.
+        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --ff-only origin "$GITHUB_REF_NAME"
+
+      - name: Set up Python
+        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install requirements
+        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
+        run: pip install -r requirements.txt
+
+      - name: Run notification command
+        id: notify_cmd
+        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
+        continue-on-error: true
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_TARGETS_JSON: ${{ secrets.FEISHU_TARGETS_JSON }}
+          FEISHU_SITE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          python -m notifications "${NOTIFICATION_MODE}"
+
+      - name: Commit notification state
+        # Bootstrap and send mutate the state file; dry-run and smoke-test do
+        # not. Committing is idempotent when nothing changed, and the [skip ci]
+        # tag plus paths-ignore prevent loops.
+        if: env.NOTIFICATION_MODE == 'bootstrap' || env.NOTIFICATION_MODE == 'send'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .notification-state/feishu.json
+          if git diff --cached --quiet; then
+            echo "No notification-state changes to commit."
+          else
+            git commit -m "Update Feishu notification state [skip ci]"
+            for attempt in 1 2 3; do
+              git pull --rebase origin "$GITHUB_REF_NAME" || true
+              if git push; then
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "git push (state) failed after $attempt attempts" >&2
+                exit 1
+              fi
+              sleep 5
+            done
+          fi
+
+      - name: Fail the job if the notification command failed
+        if: steps.notify_cmd.outcome == 'failure'
+        run: |
+          echo "notification command failed (see previous step); state was still committed if applicable." >&2
+          exit 1

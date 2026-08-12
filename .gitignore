@@ -7,3 +7,9 @@ __pycache__/
 .pytest_cache/
 *.pyc
 logs/
+*.bak
+
+# The committed notification state (.notification-state/feishu.json) MUST be
+# tracked: it records delivered arXiv IDs per target. Only the atomic-write
+# temp files are ignored so partial writes never enter version control.
+.notification-state/*.tmp
