@@ -655,6 +655,39 @@
         padding-top: 16px;
       }
 
+      .preview-abstract-zh {
+        margin-top: 12px;
+      }
+
+      .preview-abstract-zh summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 10.5px;
+        letter-spacing: 0.05em;
+        list-style: none;
+        user-select: none;
+      }
+
+      .preview-abstract-zh summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .preview-abstract-zh summary::before {
+        content: "▶ ";
+        font-size: 9px;
+        transition: transform 0.2s ease;
+        display: inline-block;
+      }
+
+      .preview-abstract-zh[open] summary::before {
+        transform: rotate(90deg);
+      }
+
+      .preview-abstract-zh p {
+        margin: 8px 0 0;
+        line-height: 1.65;
+      }
+
       .preview-links {
         display: flex;
         gap: 6px;
@@ -848,6 +881,10 @@
           <b>论文概览</b>
           <p id="preview-abstract"></p>
         </div>
+        <details class="preview-abstract-zh" id="preview-abstract-zh" hidden>
+          <summary>中文摘要翻译</summary>
+          <p id="preview-abstract-zh-body"></p>
+        </details>
         <div class="preview-links">
           <a id="preview-arxiv" target="_blank" rel="noreferrer">arXiv</a>
           <a id="preview-pdf" target="_blank" rel="noreferrer">PDF</a>
@@ -1000,6 +1037,16 @@
         ].join("");
         $("preview-publication").textContent = `${row.published || "未知"} · arXiv:${row.arxiv_id}`;
         $("preview-abstract").textContent = row.abstract || "arXiv 暂未提供论文概览。";
+        const translation = (row.translated_abstract || "").trim();
+        const translationEl = $("preview-abstract-zh");
+        if (translation) {
+          $("preview-abstract-zh-body").textContent = translation;
+          translationEl.hidden = false;
+          translationEl.open = false;
+        } else {
+          translationEl.hidden = true;
+          translationEl.open = false;
+        }
         $("preview-arxiv").href = row.arxiv_url;
         $("preview-pdf").href = row.pdf_url;
         $("paper-preview").showModal();

@@ -778,13 +778,21 @@ def prompt(items: list[dict]) -> str:
         "信息中提取真实大学、研究机构或公司名称；去掉院系、研究方向、职位"
         "和明显不是机构的描述。不得根据作者或论文内容猜测机构；无法确认时"
         "返回空数组。最多返回 8 个去重机构。\n\n"
+        "标题和摘要翻译：成对翻译为中文，两者共享同一套术语（人名、模型名、"
+        "数据集名等专有名词保持一致，如 Transformer 一律不译）。"
+        "translated_title 给出论文中文译名；translated_abstract 给出摘要的"
+        "中文翻译，采用第三人称客观叙述，不补充评论，保留原文结构。"
+        "若 abstract 已是中文或为空，则 translated_abstract 等同原文"
+        "（空输入返回空字符串）。不要省略摘要的关键论点，长度与原文相当。\n\n"
         f"指定作者：{people}。\n"
         "只返回与输入顺序一致的 JSON 数组：\n"
         '[{"arxiv_id":"编号","relevant":true,'
-        '"translated_title":"中文标题","tag":"产品相关",'
+        '"translated_title":"中文标题","translated_abstract":"中文摘要",'
+        '"tag":"产品相关",'
         '"topic_tags":["文本","模型"],'
         '"institutions":["Tsinghua University"]}]\n'
-        "relevant 必须是 JSON 布尔值；translated_title 非空；tag 只能是"
+        "relevant 必须是 JSON 布尔值；translated_title 非空；translated_abstract"
+        "为字符串（原文为空时也用空字符串）；tag 只能是"
         "“产品相关”“产品技术支持”“非产品相关”；topic_tags 必须包含 2 到 5"
         "个固定词表标签；institutions 必须是 JSON 数组。\n\n"
         f"{json.dumps(items, ensure_ascii=False)}\n"
@@ -898,10 +906,12 @@ def review_and_translate(
 
         for source, result in zip(batch, results, strict=True):
             translation = str(result.get("translated_title", "")).strip()
+            abstract_zh = str(result.get("translated_abstract", "")).strip()
             cache[source["arxiv_id"]] = {
                 "fingerprint": fingerprints[source["arxiv_id"]],
                 "relevant": normalize_relevant(result.get("relevant")),
                 "translated_title": translation,
+                "translated_abstract": abstract_zh,
                 "tag": normalize_tag(result.get("tag"), source["fallback_tag"]),
                 "topic_tags": normalize_topic_tags(result.get("topic_tags")),
                 "institutions": normalize_institutions(
@@ -1048,6 +1058,7 @@ def row_from_candidate(candidate: dict, review: dict, paper: Paper) -> dict:
         "title": paper.title,
         "authors": ", ".join(paper.authors),
         "translated_title": review["translated_title"],
+        "translated_abstract": review.get("translated_abstract", ""),
         "tag": tag,
         "topic_tags": normalize_topic_tags(review.get("topic_tags")),
         "institutions": normalize_institutions(review.get("institutions")),
