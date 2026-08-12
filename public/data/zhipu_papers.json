@@ -1,6 +1,6 @@
 {
   "summary": {
-    "updated_at": "2026-08-12T02:49:40.916462+00:00",
+    "updated_at": "2026-08-12T03:16:09.874510+00:00",
     "final_count": 208,
     "product_related": 30,
     "product_support": 17,
@@ -11,14 +11,13 @@
       "arxiv_id": "2608.10402",
       "title": "TideRL: Boosting Agentic RL Goodput with Readiness-Aware Scheduling",
       "authors": "Yanyu Ren, Xizheng Wang, Xiao Liu, Bowen Lv, Hanchen Zhang, Shudan Zhang, Hanyu Lai, Shuai Wang, Li Chen, Dan Li, Jie Tang",
-      "translated_title": "TideRL：基于就绪感知调度的智能体强化学习吞吐量提升",
+      "translated_title": "TideRL：通过就绪感知调度提升智能体强化学习吞吐量",
       "tag": "非产品相关",
       "topic_tags": [
         "强化学习",
         "智能体",
         "训练系统",
-        "加速",
-        "多模态"
+        "加速"
       ],
       "institutions": [],
       "abstract": "Reinforcement learning (RL) for large language models is moving toward multi-turn agentic workloads, where rollout tasks repeatedly pause for external environments, resume with growing contexts, and finish at highly variable times. In this setting, RL training goodput, measured by training throughput, matters more than raw GPU occupancy: GPU waiting and repeated prefill recomputation are pure overhead. We present TideRL, a readiness-aware elastic RL system with Continuous Task Batching, Resource-Aware Ref-Actor Pipelining, and Elastic Resource Scaling. CTB preserves useful rollout state, $\\textrm{RA}^2\\textrm{P}$ selects between decoupled streaming and colocated aggregation from the ready backlog and arrival interval, and ERS moves ranks between rollout and training using the same readiness signals. Across text-only and multi-modal agentic workloads, TideRL improves RL training goodput by up to 5.6$\\times$ over synchronous baselines and over 33% over asynchronous baselines, while reaching similar task performance. It also improves KV cache hit rate by 1.58$\\times$, reduces per-step training time by up to 44.3%, and cuts total waiting time by up to 77.6%.",
