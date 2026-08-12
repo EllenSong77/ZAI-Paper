@@ -49,9 +49,14 @@ def load_pending_push(path: Path) -> list[str] | None:
     """Loads the per-run new-paper cache.
 
     Returns ``None`` when the cache is absent (upstream has not produced a new
-    batch this round); otherwise returns a deduped, identity-preserved list of
-    arXiv IDs.  An existing but malformed cache raises ``ValueError`` so the
-    operator notices instead of silently skipping real papers.
+    batch this round), or when the cache exists but contains no non-empty
+    arxiv_id values -- an all-empty cache is treated as "no new papers this
+    round" rather than "round had zero pending papers", so :func:`run_send`
+    falls back to the legacy full-corpus-minus-delivered diff instead of
+    silently succeeding and deleting the cache.
+
+    An existing but malformed cache raises ``ValueError`` so the operator
+    notices instead of silently skipping real papers.
     """
     if not path.exists():
         return None
@@ -71,7 +76,10 @@ def load_pending_push(path: Path) -> list[str] | None:
         if arxiv_id and arxiv_id not in seen:
             seen.add(arxiv_id)
             out.append(arxiv_id)
-    return out
+    # An all-empty cache (e.g. written from a PowerShell variable that
+    # resolved to "") is treated as absent so we never "succeed" by pushing
+    # nothing and then deleting the operator's cache file.
+    return out or None
 
 
 def discard_pending_push(path: Path) -> None:

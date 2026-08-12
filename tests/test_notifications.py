@@ -1237,6 +1237,19 @@ class PendingPushCacheTests(TestCase):
             ids = service.load_pending_push(path)
         self.assertEqual(ids, ["2401.003", "2401.001"])
 
+    def test_all_empty_cache_treated_as_absent(self):
+        # An all-empty arxiv_ids cache (e.g. written from a shell variable that
+        # resolved to "") must NOT cause run_send to "succeed" by pushing zero
+        # papers and deleting the cache. It is treated as absent so the worker
+        # falls back to the legacy full-diff instead of falsely succeeding.
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "pending_push.json"
+            path.write_text(
+                json.dumps({"arxiv_ids": ["", "  ", ""], "produced_at": "x"}),
+                encoding="utf-8",
+            )
+            self.assertIsNone(service.load_pending_push(path))
+
     def test_reject_non_object_cache(self):
         with TemporaryDirectory() as tmp:
             path = Path(tmp) / "pending_push.json"
