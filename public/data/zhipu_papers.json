@@ -1,25 +1,48 @@
 {
   "summary": {
-    "updated_at": "2026-08-11T02:57:38.336210+00:00",
-    "final_count": 207,
+    "updated_at": "2026-08-12T02:49:40.916462+00:00",
+    "final_count": 208,
     "product_related": 30,
     "product_support": 17,
-    "academic_output": 160
+    "academic_output": 161
   },
   "rows": [
+    {
+      "arxiv_id": "2608.10402",
+      "title": "TideRL: Boosting Agentic RL Goodput with Readiness-Aware Scheduling",
+      "authors": "Yanyu Ren, Xizheng Wang, Xiao Liu, Bowen Lv, Hanchen Zhang, Shudan Zhang, Hanyu Lai, Shuai Wang, Li Chen, Dan Li, Jie Tang",
+      "translated_title": "TideRL：基于就绪感知调度的智能体强化学习吞吐量提升",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "强化学习",
+        "智能体",
+        "训练系统",
+        "加速",
+        "多模态"
+      ],
+      "institutions": [],
+      "abstract": "Reinforcement learning (RL) for large language models is moving toward multi-turn agentic workloads, where rollout tasks repeatedly pause for external environments, resume with growing contexts, and finish at highly variable times. In this setting, RL training goodput, measured by training throughput, matters more than raw GPU occupancy: GPU waiting and repeated prefill recomputation are pure overhead. We present TideRL, a readiness-aware elastic RL system with Continuous Task Batching, Resource-Aware Ref-Actor Pipelining, and Elastic Resource Scaling. CTB preserves useful rollout state, $\\textrm{RA}^2\\textrm{P}$ selects between decoupled streaming and colocated aggregation from the ready backlog and arrival interval, and ERS moves ranks between rollout and training using the same readiness signals. Across text-only and multi-modal agentic workloads, TideRL improves RL training goodput by up to 5.6$\\times$ over synchronous baselines and over 33% over asynchronous baselines, while reaching similar task performance. It also improves KV cache hit rate by 1.58$\\times$, reduces per-step training time by up to 44.3%, and cuts total waiting time by up to 77.6%.",
+      "metadata_enriched": true,
+      "published": "2026-08-11",
+      "pdf_url": "https://arxiv.org/pdf/2608.10402v1",
+      "arxiv_url": "https://arxiv.org/abs/2608.10402v1"
+    },
     {
       "arxiv_id": "2608.07641",
       "title": "SurveyReview: A Reviewer-Aligned Benchmark for Survey Evaluators",
       "authors": "Yuheng Zhang, Yuanchun Wang, Fanjin Zhang, Ruyu Zhao, Juanzi Li, Jie Tang, Jing Zhang",
-      "translated_title": "SurveyReview：面向综述评估器的评审对齐基准",
+      "translated_title": "SurveyReview：面向综述评估器的审稿人对齐基准",
       "tag": "非产品相关",
       "topic_tags": [
         "文本",
         "评测",
         "Benchmark",
-        "对齐"
+        "对齐",
+        "微调"
       ],
-      "institutions": [],
+      "institutions": [
+        "Renmin University of China"
+      ],
       "abstract": "The rapid advancement of large language models has transformed survey writing from a months-long manual effort into an automated process. As generation scales, reliable evaluation becomes the bottleneck, and LLMs are increasingly used as survey evaluators. However, existing approaches largely rely on off-the-shelf LLM-as-a-judge methods without systematic alignment to human reviewers, and there remains a lack of systematic frameworks for quantifying alignment with human reviewers. To address this gap, we propose SurveyReview, a reviewer-aligned, multi-dimensional benchmark and dataset for survey evaluation. We collect and annotate 675 survey papers with 1,630 review reports. We structure authentic peer-review reports by converting free-form comments into four-dimensional scores (Readability, Criticalness, Comprehensiveness, Structure) paired with supporting rationales. We further release standardized train/test splits and an evaluation protocol to measure alignment between automatic evaluators and human reviewers. To validate the benchmark, we develop SurveyAlign, a strong baseline evaluator by fine-tuning Qwen3-32B with LoRA on our annotated data, augmented with external knowledge for knowledge-intensive dimensions. On the test set, SurveyAlign substantially improves reviewer alignment over prompt-based judging with GPT-5.2, reducing average MSE from 2.28 to 1.38 and MAE from 1.15 to 0.69 across all four dimensions. Our contributions are twofold: (1) we establish the first multi-dimensional, reviewer-aligned dataset with a reproducible evaluation framework for survey reviewing; (2) we develop a strong baseline evaluator that substantially improves alignment with human reviewers, providing a competitive reference for future research. Our code and data are available at https://surveyreview.github.io",
       "metadata_enriched": true,
       "published": "2026-08-07",
