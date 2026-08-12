@@ -213,10 +213,10 @@ def run_dry_run(settings: Settings) -> tuple[bool, list[TargetResult]]:
     """
     data = _validate_papers_file(settings.papers_path)
     pending_push_path = _pending_push_path(settings)
-    try:
-        pending_cache = load_pending_push(pending_push_path)
-    except ValueError as error:
-        raise ValueError(str(error)) from error
+    # load_pending_push raises ValueError on a malformed cache; let it
+    # propagate so the operator sees the original message instead of a
+    # no-op rewrap that loses the chain.
+    pending_cache = load_pending_push(pending_push_path)
     cache_status = (
         f"pending_push=loaded({len(pending_cache)} ids)"
         if pending_cache is not None
@@ -272,7 +272,6 @@ def run_smoke_test(settings: Settings) -> tuple[bool, list[TargetResult]]:
     app_id, app_secret = require_credentials(settings)
     card = cards.build_smoke_test_card(settings.site_url)
     content = cards.encode_content(card)
-    working_state = state.load_state(settings.state_path)
 
     results: list[TargetResult] = []
     for target in settings.targets:
@@ -323,9 +322,6 @@ def run_smoke_test(settings: Settings) -> tuple[bool, list[TargetResult]]:
             )
         )
 
-    # State is intentionally not loaded beyond the diagnostics above; smoke
-    # tests never record deliveries.
-    _ = working_state
     return all(result.ok for result in results), results
 
 
@@ -587,5 +583,4 @@ def run_send(
 
 def utc_now_iso() -> str:
     """Re-exported for callers that want the same timestamp format."""
-    datetime.now(timezone.utc)
     return state.utc_now_iso()
