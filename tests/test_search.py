@@ -348,6 +348,24 @@ class RuleTests(TestCase):
             len(validate_review_results(results, ["1", "2"])), 2
         )
 
+    def test_review_results_reject_non_string_abstract_translation(self) -> None:
+        """A dict/list translated_abstract must be rejected outright: str()
+        would coerce it into garbage that ships to the public JSON."""
+        batch = [{"arxiv_id": "1", "abstract": "Some real abstract text"}]
+        base = {
+            "arxiv_id": "1",
+            "relevant": True,
+            "translated_title": "标题",
+            "topic_tags": ["文本", "模型"],
+            "institutions": [],
+        }
+        for bad in ({"zh": "x"}, ["中文"], 42, None):
+            with self.subTest(payload=bad):
+                with self.assertRaisesRegex(ValueError, "must be a string"):
+                    validate_review_results(
+                        [{**base, "translated_abstract": bad}], ["1"], batch
+                    )
+
     def test_topic_tags_are_deduplicated_and_limited_to_vocabulary(self) -> None:
         self.assertEqual(
             normalize_topic_tags(

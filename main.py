@@ -750,10 +750,16 @@ def validate_review_results(
             }
             source_abstract = abstracts_by_id.get(str(item.get("arxiv_id")))
             if source_abstract:
-                abstract_zh = str(
-                    item.get("translated_abstract", "")
-                ).strip()
-                if not abstract_zh:
+                raw_abstract_zh = item.get("translated_abstract", "")
+                # A dict/list payload must be rejected outright: str() would
+                # coerce it into garbage ("{'zh': 'x'}") that then ships to
+                # the public JSON.
+                if not isinstance(raw_abstract_zh, str):
+                    raise ValueError(
+                        "LLM translated_abstract must be a string, got "
+                        f"{type(raw_abstract_zh).__name__}"
+                    )
+                if not raw_abstract_zh.strip():
                     raise ValueError(
                         "LLM translated_abstract must be non-empty when the "
                         "paper has an abstract"
@@ -940,7 +946,14 @@ def review_and_translate(
 
         for source, result in zip(batch, results, strict=True):
             translation = str(result.get("translated_title", "")).strip()
-            abstract_zh = str(result.get("translated_abstract", "")).strip()
+            # Non-string payloads (dict/list from a drifted LLM response)
+            # are normalized to "" here; validate_review_results already
+            # rejects that upstream, so this is defense in depth for any
+            # path that skips validation.
+            raw_zh = result.get("translated_abstract", "")
+            abstract_zh = (
+                str(raw_zh).strip() if isinstance(raw_zh, str) else ""
+            )
             cache[source["arxiv_id"]] = {
                 "fingerprint": fingerprints[source["arxiv_id"]],
                 "relevant": normalize_relevant(result.get("relevant")),
