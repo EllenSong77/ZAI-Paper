@@ -587,6 +587,8 @@
       }
 
       .preview-content {
+        max-height: min(84vh, 760px);
+        overflow-y: auto;
         padding: 22px;
       }
 
@@ -644,6 +646,14 @@
         letter-spacing: 0.05em;
       }
 
+      /* When the <b> lives inside the new flex header row next to the toggle
+         button, override the block display so the title and button align on
+         the same horizontal line. */
+      .preview-abstract-header b {
+        display: inline;
+        margin-bottom: 0;
+      }
+
       .preview-field p,
       .preview-abstract p {
         margin: 0;
@@ -653,6 +663,35 @@
       .preview-abstract {
         border-top: 1px solid var(--border);
         padding-top: 16px;
+      }
+
+      .preview-abstract-header {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .preview-abstract-toggle {
+        background: transparent;
+        border: 1px solid var(--accent, #2563eb);
+        border-radius: 999px;
+        color: var(--accent, #2563eb);
+        cursor: pointer;
+        font-size: 11px;
+        line-height: 1;
+        padding: 4px 10px;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .preview-abstract-toggle:hover,
+      .preview-abstract-toggle:focus-visible {
+        background: var(--accent, #2563eb);
+        color: #fff;
+      }
+
+      .preview-abstract-toggle[hidden] {
+        display: none;
       }
 
       .preview-links {
@@ -845,7 +884,10 @@
           </div>
         </div>
         <div class="preview-abstract">
-          <b>论文概览</b>
+          <div class="preview-abstract-header">
+            <b>论文概览</b>
+            <button class="preview-abstract-toggle" id="preview-abstract-toggle" type="button" hidden>查看中文</button>
+          </div>
           <p id="preview-abstract"></p>
         </div>
         <div class="preview-links">
@@ -864,6 +906,7 @@
         selectedPaperIds: new Set(),
         summary: {},
         exportMode: false,
+        previewLang: "en",
       };
       const $ = (id) => document.getElementById(id);
       let tooltipHideTimer = null;
@@ -1000,6 +1043,25 @@
         ].join("");
         $("preview-publication").textContent = `${row.published || "未知"} · arXiv:${row.arxiv_id}`;
         $("preview-abstract").textContent = row.abstract || "arXiv 暂未提供论文概览。";
+        // Abstract toggle: store both languages so the toggle button can swap
+        // them in place. Default to EN; show the toggle button only when a
+        // Chinese translation is available (otherwise hide it -- no point
+        // offering a switch that leads to empty content).
+        const enAbstract = row.abstract || "arXiv 暂未提供论文概览。";
+        const zhAbstract = (row.translated_abstract || "").trim();
+        state.previewLang = "en";
+        $("preview-abstract").textContent = enAbstract;
+        const toggleBtn = $("preview-abstract-toggle");
+        if (zhAbstract) {
+          toggleBtn.hidden = false;
+          toggleBtn.textContent = "查看中文";
+          toggleBtn.dataset.en = enAbstract;
+          toggleBtn.dataset.zh = zhAbstract;
+        } else {
+          toggleBtn.hidden = true;
+          toggleBtn.removeAttribute("data-en");
+          toggleBtn.removeAttribute("data-zh");
+        }
         $("preview-arxiv").href = row.arxiv_url;
         $("preview-pdf").href = row.pdf_url;
         $("paper-preview").showModal();
@@ -1088,6 +1150,7 @@
             row.institutions.join(" "),
             row.topic_tags.join(" "),
             row.abstract,
+            row.translated_abstract || "",
             row.arxiv_id,
             row.tag,
           ]
@@ -1248,6 +1311,28 @@
       $("paper-preview").addEventListener("click", (event) => {
         if (event.target === $("paper-preview")) {
           $("paper-preview").close();
+        }
+      });
+      // Toggle the preview abstract between EN (default) and ZH. The two
+      // strings are stashed on the button's dataset by openPreview(); when
+      // the modal is opened for a row without a Chinese translation, the
+      // button stays hidden and this listener is a no-op.
+      $("preview-abstract-toggle").addEventListener("click", () => {
+        const btn = $("preview-abstract-toggle");
+        const en = btn.dataset.en;
+        const zh = btn.dataset.zh;
+        if (!en || !zh) {
+          return;
+        }
+        const abstractEl = $("preview-abstract");
+        if (state.previewLang === "en") {
+          abstractEl.textContent = zh;
+          state.previewLang = "zh";
+          btn.textContent = "查看英文";
+        } else {
+          abstractEl.textContent = en;
+          state.previewLang = "en";
+          btn.textContent = "查看中文";
         }
       });
       document.addEventListener("mouseover", (event) => {

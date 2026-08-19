@@ -311,6 +311,61 @@ class RuleTests(TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate translations"):
             validate_review_results(results, ["1", "2"])
 
+    def test_review_results_require_abstract_translation_when_source_has_abstract(self) -> None:
+        """v8 schema guard: a paper with an abstract must return a non-empty
+        translated_abstract; without this check a missing field would pass,
+        get cached, and silently ship an empty translation."""
+        batch = [
+            {"arxiv_id": "1", "abstract": "Some real abstract text"},
+            {"arxiv_id": "2", "abstract": ""},
+        ]
+        base = {
+            "relevant": True,
+            "translated_title": "标题",
+            "topic_tags": ["文本", "模型"],
+            "institutions": [],
+        }
+        results = [
+            {**base, "arxiv_id": "1", "translated_title": "标题一", "translated_abstract": ""},
+            {**base, "arxiv_id": "2", "translated_title": "标题二", "translated_abstract": ""},
+        ]
+        # Paper 1 has an abstract but returned an empty translation -> reject.
+        with self.assertRaisesRegex(
+            ValueError, "translated_abstract must be non-empty"
+        ):
+            validate_review_results(results, ["1", "2"], batch)
+        # Paper 2 has no abstract, so an empty translation is fine; give
+        # paper 1 a real translation and the batch passes.
+        results_ok = [
+            {**base, "arxiv_id": "1", "translated_title": "标题", "translated_abstract": "中文摘要"},
+            {**base, "arxiv_id": "2", "translated_title": "标题二", "translated_abstract": ""},
+        ]
+        self.assertEqual(
+            len(validate_review_results(results_ok, ["1", "2"], batch)), 2
+        )
+        # Legacy two-argument call skips the abstract check entirely.
+        self.assertEqual(
+            len(validate_review_results(results, ["1", "2"])), 2
+        )
+
+    def test_review_results_reject_non_string_abstract_translation(self) -> None:
+        """A dict/list translated_abstract must be rejected outright: str()
+        would coerce it into garbage that ships to the public JSON."""
+        batch = [{"arxiv_id": "1", "abstract": "Some real abstract text"}]
+        base = {
+            "arxiv_id": "1",
+            "relevant": True,
+            "translated_title": "标题",
+            "topic_tags": ["文本", "模型"],
+            "institutions": [],
+        }
+        for bad in ({"zh": "x"}, ["中文"], 42, None):
+            with self.subTest(payload=bad):
+                with self.assertRaisesRegex(ValueError, "must be a string"):
+                    validate_review_results(
+                        [{**base, "translated_abstract": bad}], ["1"], batch
+                    )
+
     def test_topic_tags_are_deduplicated_and_limited_to_vocabulary(self) -> None:
         self.assertEqual(
             normalize_topic_tags(
@@ -477,3 +532,65 @@ class RuleTests(TestCase):
         ]
         rows = merge_rows("incremental", existing, reviewed)
         self.assertEqual(rows[0]["institutions"], ["Z.AI"])
+
+    def test_incremental_merge_preserves_backfilled_abstract(self) -> None:
+        # Regression for the stale-cache overwrite bug: a v7-era cached review
+        # has no translated_abstract, so the freshly reviewed row carries an
+        # empty string. The merge must NOT overwrite a previously backfilled
+        # translation with that empty value.
+        existing = {
+            "1": {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "translated_abstract": "已回填的中文摘要。",
+            }
+        }
+        reviewed = [
+            {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "translated_abstract": "",
+            }
+        ]
+        rows = merge_rows("incremental", existing, reviewed)
+        self.assertEqual(rows[0]["translated_abstract"], "已回填的中文摘要。")
+
+    def test_full_sync_replaces_abstract_without_preserving(self) -> None:
+        # In full mode every reviewed row is authoritative: an empty
+        # translated_abstract in the new row must NOT inherit the old value,
+        # otherwise deleted translations could never be flushed.
+        existing = {
+            "1": {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "translated_abstract": "旧的中文摘要。",
+            }
+        }
+        reviewed = [
+            {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "translated_abstract": "",
+            }
+        ]
+        rows = merge_rows("full", existing, reviewed)
+        self.assertEqual(rows[0]["translated_abstract"], "")
+
+    def test_incremental_merge_accepts_fresh_translation(self) -> None:
+        # A genuine new translation (non-empty) always wins over the old one.
+        existing = {
+            "1": {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "translated_abstract": "旧翻译。",
+            }
+        }
+        reviewed = [
+            {
+                "arxiv_id": "1",
+                "published": "2025-01-01",
+                "translated_abstract": "新的完整翻译。",
+            }
+        ]
+        rows = merge_rows("incremental", existing, reviewed)
+        self.assertEqual(rows[0]["translated_abstract"], "新的完整翻译。")

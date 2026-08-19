@@ -54,7 +54,12 @@ ATOM = {
 }
 OPENSEARCH = {"os": "http://a9.com/-/spec/opensearch/1.1/"}
 MIN_YEAR = 2020
-CACHE_VERSION = "zai-xin-lv-pairs-v7"
+#: v8 adds translated_abstract to the LLM output schema. Bumping the version
+#: invalidates every cached review written by v7 (which lacks the field) both
+#: at the file level (load_cache version check) and per-row (CACHE_VERSION is
+#: hashed into review_fingerprint), so stale entries can never be mistaken
+#: for fresh ones.
+CACHE_VERSION = "zai-xin-lv-pairs-v8"
 ARXIV_PAGE_SIZE = 200
 ARXIV_ID_BATCH_SIZE = 100
 ARXIV_RETRIES = 5
@@ -705,9 +710,15 @@ def parse_json_array(text: str) -> list[dict]:
 
 
 def validate_review_results(
-    results: list[dict], expected_ids: list[str]
+    results: list[dict], expected_ids: list[str], batch: list[dict] | None = None
 ) -> list[dict]:
-    """Validates and orders one batch of LLM review results."""
+    """Validates and orders one batch of LLM review results.
+
+    ``batch`` is the prompt input for the same round; when provided, the v8
+    schema rule "papers with an abstract must return a non-empty
+    translated_abstract" is enforced against the original abstracts. Without
+    ``batch`` (legacy callers/tests) the abstract check is skipped.
+    """
     results_by_id = {
         str(item.get("arxiv_id")): item for item in results
     }
@@ -729,6 +740,30 @@ def validate_review_results(
             raise ValueError("LLM topic_tags must contain 2 to 5 valid tags")
         if not isinstance(item.get("institutions"), list):
             raise ValueError("LLM institutions must be an array")
+        # The v8 output schema requires translated_abstract whenever the
+        # paper has an abstract. A missing field would otherwise pass
+        # validation, get cached, and silently ship an empty translation.
+        if batch is not None:
+            abstracts_by_id = {
+                str(item["arxiv_id"]): str(item.get("abstract") or "").strip()
+                for item in batch
+            }
+            source_abstract = abstracts_by_id.get(str(item.get("arxiv_id")))
+            if source_abstract:
+                raw_abstract_zh = item.get("translated_abstract", "")
+                # A dict/list payload must be rejected outright: str() would
+                # coerce it into garbage ("{'zh': 'x'}") that then ships to
+                # the public JSON.
+                if not isinstance(raw_abstract_zh, str):
+                    raise ValueError(
+                        "LLM translated_abstract must be a string, got "
+                        f"{type(raw_abstract_zh).__name__}"
+                    )
+                if not raw_abstract_zh.strip():
+                    raise ValueError(
+                        "LLM translated_abstract must be non-empty when the "
+                        "paper has an abstract"
+                    )
     if (
         len(results) != len(expected_ids)
         or returned_ids != expected_ids
@@ -778,13 +813,21 @@ def prompt(items: list[dict]) -> str:
         "信息中提取真实大学、研究机构或公司名称；去掉院系、研究方向、职位"
         "和明显不是机构的描述。不得根据作者或论文内容猜测机构；无法确认时"
         "返回空数组。最多返回 8 个去重机构。\n\n"
+        "标题和摘要翻译：成对翻译为中文，两者共享同一套术语（人名、模型名、"
+        "数据集名等专有名词保持一致，如 Transformer 一律不译）。"
+        "translated_title 给出论文中文译名；translated_abstract 给出摘要的"
+        "中文翻译，采用第三人称客观叙述，不补充评论，保留原文结构。"
+        "若 abstract 已是中文或为空，则 translated_abstract 等同原文"
+        "（空输入返回空字符串）。不要省略摘要的关键论点，长度与原文相当。\n\n"
         f"指定作者：{people}。\n"
         "只返回与输入顺序一致的 JSON 数组：\n"
         '[{"arxiv_id":"编号","relevant":true,'
-        '"translated_title":"中文标题","tag":"产品相关",'
+        '"translated_title":"中文标题","translated_abstract":"中文摘要",'
+        '"tag":"产品相关",'
         '"topic_tags":["文本","模型"],'
         '"institutions":["Tsinghua University"]}]\n'
-        "relevant 必须是 JSON 布尔值；translated_title 非空；tag 只能是"
+        "relevant 必须是 JSON 布尔值；translated_title 非空；translated_abstract"
+        "为字符串（原文为空时也用空字符串）；tag 只能是"
         "“产品相关”“产品技术支持”“非产品相关”；topic_tags 必须包含 2 到 5"
         "个固定词表标签；institutions 必须是 JSON 数组。\n\n"
         f"{json.dumps(items, ensure_ascii=False)}\n"
@@ -860,7 +903,12 @@ def review_and_translate(
                 "external_affiliations": item.get(
                     "external_affiliations", []
                 ),
-                "abstract": item["abstract"][:1400],
+                # Full abstract, no truncation: the prompt contract requires a
+                # complete translation ("不省略摘要的关键论点，长度与原文
+                # 相当"), so feeding a truncated input would produce a
+                # truncated output. arXiv abstracts fit comfortably in the
+                # model context window.
+                "abstract": item["abstract"],
                 "categories": item["categories"],
                 "evidence": item["evidence"],
                 "hard_selected": item["hard_selected"],
@@ -889,7 +937,7 @@ def review_and_translate(
                 results = parse_json_array(
                     response.json()["choices"][0]["message"]["content"]
                 )
-                results = validate_review_results(results, expected)
+                results = validate_review_results(results, expected, batch)
                 break
             except (KeyError, TypeError, ValueError):
                 if attempt == 2:
@@ -898,10 +946,19 @@ def review_and_translate(
 
         for source, result in zip(batch, results, strict=True):
             translation = str(result.get("translated_title", "")).strip()
+            # Non-string payloads (dict/list from a drifted LLM response)
+            # are normalized to "" here; validate_review_results already
+            # rejects that upstream, so this is defense in depth for any
+            # path that skips validation.
+            raw_zh = result.get("translated_abstract", "")
+            abstract_zh = (
+                str(raw_zh).strip() if isinstance(raw_zh, str) else ""
+            )
             cache[source["arxiv_id"]] = {
                 "fingerprint": fingerprints[source["arxiv_id"]],
                 "relevant": normalize_relevant(result.get("relevant")),
                 "translated_title": translation,
+                "translated_abstract": abstract_zh,
                 "tag": normalize_tag(result.get("tag"), source["fallback_tag"]),
                 "topic_tags": normalize_topic_tags(result.get("topic_tags")),
                 "institutions": normalize_institutions(
@@ -1048,6 +1105,7 @@ def row_from_candidate(candidate: dict, review: dict, paper: Paper) -> dict:
         "title": paper.title,
         "authors": ", ".join(paper.authors),
         "translated_title": review["translated_title"],
+        "translated_abstract": review.get("translated_abstract", ""),
         "tag": tag,
         "topic_tags": normalize_topic_tags(review.get("topic_tags")),
         "institutions": normalize_institutions(review.get("institutions")),
@@ -1076,7 +1134,14 @@ def approved_rows(
 def merge_rows(
     mode: str, existing_rows: dict[str, dict], reviewed_rows: list[dict]
 ) -> list[dict]:
-    """Replaces all rows for full syncs and merges rows for incremental syncs."""
+    """Replaces all rows for full syncs and merges rows for incremental syncs.
+
+    Incremental syncs defensively preserve a previously backfilled
+    ``translated_abstract`` when the freshly reviewed row's copy is empty
+    (e.g. a stale review cache predating the v8 schema would surface as an
+    empty string via ``review.get("translated_abstract", "")``). Without
+    this guard the empty new value would overwrite the stored translation.
+    """
     rows_by_id = {} if mode == "full" else dict(existing_rows)
     for arxiv_id in EXCLUDED_ARXIV_IDS:
         rows_by_id.pop(arxiv_id, None)
@@ -1086,6 +1151,12 @@ def merge_rows(
             "institutions"
         ):
             row = {**row, "institutions": previous["institutions"]}
+        if (
+            mode != "full"
+            and previous.get("translated_abstract")
+            and not row.get("translated_abstract")
+        ):
+            row = {**row, "translated_abstract": previous["translated_abstract"]}
         rows_by_id[row["arxiv_id"]] = row
     rows = list(rows_by_id.values())
     rows.sort(key=lambda row: row.get("published", ""), reverse=True)
