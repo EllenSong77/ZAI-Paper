@@ -39,6 +39,12 @@ logger = logging.getLogger("notifications")
 #: notification state so it never reaches the published GitHub Pages output.
 DEFAULT_PENDING_PUSH_PATH = ".notification-state/pending_push.json"
 
+#: Maximum papers per Feishu card. Feishu caps interactive cards at roughly
+#: 150KB serialized; a full paper block renders to 1-3KB, so 20 per card
+#: stays comfortably inside the limit while keeping catch-up batches
+#: readable. Larger pending batches are split across multiple cards.
+CARD_MAX_PAPERS = 20
+
 
 def _pending_push_path(settings: Settings) -> Path:
     """Returns the pending-push cache path, sibling to the state file."""
@@ -409,16 +415,30 @@ def _send_papers(
     target: Target,
     rows: list[dict[str, Any]],
     site_url: str,
-) -> client.FeishuResponse:
-    """Sends a single card containing all ``rows`` to the given target."""
-    card = cards.build_papers_card(rows, site_url)
-    return client.send_message(
-        session,
-        token,
-        target.receive_id_type,
-        target.receive_id,
-        cards.encode_content(card),
-    )
+) -> list[client.FeishuResponse]:
+    """Sends the papers as one or more cards of at most CARD_MAX_PAPERS.
+
+    Feishu caps the size of an interactive card (~150KB serialized); a
+    catch-up batch that accumulated while a target was failing can hold
+    dozens of papers, and one giant card would exceed the cap as a
+    PermanentError. Chunking keeps every card well inside the limit;
+    chunk failures are handled by the caller (successful chunks are
+    already recorded, so only the unsent remainder is retried later).
+    """
+    responses: list[client.FeishuResponse] = []
+    for start in range(0, len(rows), CARD_MAX_PAPERS):
+        chunk = rows[start : start + CARD_MAX_PAPERS]
+        card = cards.build_papers_card(chunk, site_url)
+        responses.append(
+            client.send_message(
+                session,
+                token,
+                target.receive_id_type,
+                target.receive_id,
+                cards.encode_content(card),
+            )
+        )
+    return responses
 
 
 def run_send(
@@ -514,39 +534,67 @@ def run_send(
             sent_ids: list[str] = []
             failure_msg = ""
 
-            # Build one card containing all pending papers (deterministic
-            # order), and send it in a single Feishu call. If the call
-            # succeeds, every pending arXiv id is recorded as delivered with
-            # the same message_id; if it fails, none are recorded and the next
-            # run will retry the whole batch.
+            # Deterministic order, then send in chunks of CARD_MAX_PAPERS.
+            # Chunk-level progress is recorded immediately: if chunk 3 of 5
+            # fails, chunks 1-2 are already in the state file (and the seen
+            # set), so the retry -- cache-driven or fallback -- delivers
+            # only the unsent remainder, never a duplicate.
             ordered_rows = sorted(pending_rows, key=_arxiv_id_key)
-            try:
-                response = _send_papers(
-                    session,
-                    token,
-                    target,
-                    ordered_rows,
-                    settings.site_url,
+            for start in range(0, len(ordered_rows), CARD_MAX_PAPERS):
+                chunk = ordered_rows[start : start + CARD_MAX_PAPERS]
+                try:
+                    responses = _send_papers(
+                        session,
+                        token,
+                        target,
+                        chunk,
+                        settings.site_url,
+                    )
+                except client.PermanentError as error:
+                    failure_msg = (
+                        f"permanent error on papers "
+                        f"{start + 1}-{start + len(chunk)}: {error}"
+                    )
+                    _log_target(logging.ERROR, target, failure_msg)
+                    break
+                except client.TransientError as error:
+                    failure_msg = (
+                        f"transient error on papers "
+                        f"{start + 1}-{start + len(chunk)}: {error}"
+                    )
+                    _log_target(logging.ERROR, target, failure_msg)
+                    break
+                except requests.RequestException as error:
+                    failure_msg = (
+                        f"network error on papers "
+                        f"{start + 1}-{start + len(chunk)}: "
+                        f"{error.__class__.__name__}"
+                    )
+                    _log_target(logging.ERROR, target, failure_msg)
+                    break
+                except Exception as error:  # noqa: BLE001 - per-chunk guard
+                    # Unexpected bug (poisoned state edge, card build
+                    # failure...): fail this target without aborting the
+                    # whole run. Chunks already flushed are preserved.
+                    failure_msg = (
+                        f"unexpected error on papers "
+                        f"{start + 1}-{start + len(chunk)}: "
+                        f"{error.__class__.__name__}: {error}"
+                    )
+                    _log_target(logging.ERROR, target, failure_msg)
+                    break
+                message_id = (
+                    responses[0].message_id if responses else ""
                 )
-            except client.PermanentError as error:
-                failure_msg = f"permanent error: {error}"
-                _log_target(logging.ERROR, target, failure_msg)
-            except client.TransientError as error:
-                failure_msg = f"transient error: {error}"
-                _log_target(logging.ERROR, target, failure_msg)
-            except requests.RequestException as error:
-                failure_msg = f"network error: {error.__class__.__name__}"
-                _log_target(logging.ERROR, target, failure_msg)
-            else:
-                message_id = response.message_id or ""
-                for row in ordered_rows:
+                for row in chunk:
                     arxiv_id = str(row.get("arxiv_id", "")).strip()
                     if arxiv_id:
                         working_state = state.record_delivery(
                             working_state, target, arxiv_id, message_id
                         )
                         sent_ids.append(arxiv_id)
-                # Flush so a later target failure never loses this progress.
+                # Flush per chunk so a later chunk's failure (or a later
+                # target's failure) never loses this chunk's progress.
                 writer(settings.state_path, working_state)
         finally:
             if token_acquired:

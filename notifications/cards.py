@@ -45,6 +45,22 @@ def _truncate(text: str | None, limit: int) -> str:
     return cleaned[: limit - 1].rstrip() + "…"
 
 
+def _escape_md(text: str | None) -> str:
+    """Neutralizes markdown/lark-XML metacharacters in LLM-supplied text.
+
+    Titles and authors are interpolated into markdown elements where
+    ``<font>``, ``<text_tag>``, and emphasis characters are live syntax;
+    a paper title containing them would otherwise break rendering. The
+    escaping is deliberately minimal (no HTML entity substitution -- the
+    card renderer is not a browser) and applied only to interpolated
+    payloads, never to our own markup templates.
+    """
+    cleaned = _truncate(text, 10_000)  # bound well above any real field
+    for ch in ("\\", "`", "*", "_", "~", "[", "]", "<", ">"):
+        cleaned = cleaned.replace(ch, "\\" + ch)
+    return cleaned
+
+
 def _plain_text(content: str) -> dict[str, Any]:
     """Returns a CardKit plain_text text node."""
     return {"tag": "plain_text", "content": content}
@@ -105,15 +121,15 @@ def _paper_columns(row: dict[str, Any], index: int, total: int) -> list[dict[str
     title_md = english_title or chinese_title or str(row.get("arxiv_id", ""))
     if title_md:
         right_elements.append(
-            _markdown(f"**<font color='blue'>{title_md}</font>**")
+            _markdown(f"**<font color='blue'>{_escape_md(title_md)}</font>**")
         )
     if chinese_title and chinese_title != english_title:
-        right_elements.append(_markdown(chinese_title))
+        right_elements.append(_markdown(_escape_md(chinese_title)))
     if authors:
         # Smaller, italic English-style author line in grey.
         right_elements.append(
             _markdown(
-                f"<font color='grey'>作者：*{authors}*</font>",
+                f"<font color='grey'>作者：*{_escape_md(authors)}*</font>",
                 size="notation",
             )
         )

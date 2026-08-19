@@ -1253,19 +1253,42 @@ def main() -> None:
     # flood targets).  Lives next to the notification state so it stays out
     # of the published GitHub Pages output.
     #
-    # Deliberately NO else-branch that deletes the cache when a round has no
-    # new papers: a previous round's cache may still be awaiting a send
-    # retry (partial Feishu failure), and deleting it here would silently
-    # drop that batch. The cache lifecycle is owned exclusively by the
-    # notification worker -- it is discarded only after every target has
-    # been sent to successfully.
+    # ACCUMULATING write: merge this round's new ids into any cache that is
+    # still awaiting delivery. A previous round may have kept its batch
+    # because some target failed; overwriting the file wholesale (the
+    # original implementation) would permanently drop that undelivered
+    # batch once today's papers arrive. The cache is released only by the
+    # notification worker after EVERY target has been sent to
+    # successfully -- until then it only grows, and `send` idempotently
+    # skips targets that already received a given id (sent_ids).
     pending_path = ROOT / ".notification-state" / "pending_push.json"
     if mode != "full" and new_ids:
+        accumulated: list[str] = list(new_ids)
+        if pending_path.exists():
+            try:
+                previous = json.loads(
+                    pending_path.read_text(encoding="utf-8")
+                )
+                previous_ids = previous.get("arxiv_ids") if isinstance(
+                    previous, dict
+                ) else None
+                if isinstance(previous_ids, list):
+                    seen_ids = set(accumulated)
+                    for raw in previous_ids:
+                        arxiv_id = str(raw).strip()
+                        if arxiv_id and arxiv_id not in seen_ids:
+                            seen_ids.add(arxiv_id)
+                            accumulated.append(arxiv_id)
+                # A malformed cache (not a dict / no list) is treated as
+                # absent: today's batch wins, matching how the notification
+                # worker tolerates a corrupt cache.
+            except (OSError, json.JSONDecodeError):
+                pass  # unreadable cache -> start fresh with today's batch
         pending_path.parent.mkdir(parents=True, exist_ok=True)
         pending_path.write_text(
             json.dumps(
                 {
-                    "arxiv_ids": new_ids,
+                    "arxiv_ids": accumulated,
                     "produced_at": datetime.now(timezone.utc)
                     .strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "papers_path": str(output.relative_to(ROOT)),

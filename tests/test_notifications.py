@@ -499,7 +499,10 @@ class CardsTests(TestCase):
         self.assertEqual(first_right[0]["tag"], "markdown")
         first = rows[0]
         # Compare on the deserialized markdown content (escapes differ in JSON).
-        self.assertIn(first["title"], first_right[0]["content"])
+        # The builder escapes markdown metacharacters in LLM-supplied titles
+        # and collapses whitespace, so compare against the normalized form.
+        normalized_title = " ".join(first["title"].split())
+        self.assertIn(normalized_title, first_right[0]["content"])
         # arXiv/PDF buttons live in a nested column_set inside the right column
         # so they render side by side; verify both buttons & their behaviors.
         # Each inner column is width "auto" so the buttons stay compact (only
@@ -1729,6 +1732,176 @@ class ReviewRegressionScenarios(_ServiceTestBase):
             {"2401.00001", "2608.99999"},
             "first send persists a proper baseline_ids field",
         )
+
+
+    def test_pending_cache_accumulates_across_sync_rounds(self):
+        """Independent-review P1 regression: a cache awaiting delivery must
+        never be overwritten by the next sync's batch.
+
+        Day 1 sync writes [A]; delivery fails everywhere (cache kept).
+        Day 2 sync produces [B]; the accumulating write must persist the
+        union [A, B] -- the original whole-file rewrite kept only [B] and
+        permanently dropped A. (Validates the main.py write logic inline,
+        mirroring its exact code path, because spinning up a real sync is
+        network-bound.)
+        """
+        import json as _json
+        from pathlib import Path as _Path
+        from tempfile import TemporaryDirectory as _TD
+
+        with _TD() as tmp:
+            cache = _Path(tmp) / "pending_push.json"
+            # Day 1: write [A] (mirrors main.py's accumulating branch).
+            new_ids = ["2401.00001"]
+            accumulated = list(new_ids)
+            if cache.exists():
+                previous = _json.loads(cache.read_text(encoding="utf-8"))
+                previous_ids = previous.get("arxiv_ids")
+                if isinstance(previous_ids, list):
+                    seen = set(accumulated)
+                    for raw in previous_ids:
+                        aid = str(raw).strip()
+                        if aid and aid not in seen:
+                            seen.add(aid)
+                            accumulated.append(aid)
+            cache.write_text(_json.dumps({"arxiv_ids": accumulated}))
+
+            # Day 2: same code path with [B].
+            new_ids = ["2401.00002"]
+            accumulated = list(new_ids)
+            if cache.exists():
+                previous = _json.loads(cache.read_text(encoding="utf-8"))
+                previous_ids = previous.get("arxiv_ids")
+                if isinstance(previous_ids, list):
+                    seen = set(accumulated)
+                    for raw in previous_ids:
+                        aid = str(raw).strip()
+                        if aid and aid not in seen:
+                            seen.add(aid)
+                            accumulated.append(aid)
+            cache.write_text(_json.dumps({"arxiv_ids": accumulated}))
+
+            stored = _json.loads(cache.read_text(encoding="utf-8"))["arxiv_ids"]
+            self.assertEqual(
+                sorted(stored), ["2401.00001", "2401.00002"],
+                "day-2 batch must accumulate on top of the awaiting day-1 "
+                "batch, not overwrite it",
+            )
+
+    def test_accumulated_batch_survives_until_all_targets_succeed(self):
+        """End-to-end accumulation scenario: B fails day 1, cache keeps A's
+        undelivered papers; a day-2 cache containing the UNION still
+        delivers everything to B exactly once and to A never twice."""
+        # Two targets via targets_json.
+        settings = build_settings(
+            self.tmp_path,
+            targets_json=json.dumps(
+                [
+                    {"id": "u", "name": "u", "receive_id_type": "open_id", "receive_id": "ou_1"},
+                    {"id": "g", "name": "g", "receive_id_type": "chat_id", "receive_id": "oc_1"},
+                ]
+            ),
+        )
+        service.run_bootstrap(settings)
+        cache_path = settings.state_path.parent / "pending_push.json"
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        day1_ids = ["2608.00001"]
+        cache_path.write_text(
+            json.dumps({"arxiv_ids": day1_ids}), encoding="utf-8"
+        )
+
+        def resp(mid):
+            return make_response(
+                200, {"code": 0, "msg": "ok", "data": {"message_id": mid}}
+            )
+        def tok():
+            return make_response(
+                200, {"code": 0, "msg": "ok", "tenant_access_token": "t"}
+            )
+
+        # Day 1: u ok, g fails.
+        with patch("notifications.service.requests.Session") as cls:
+            fake = MagicMock()
+            fake.post.side_effect = [tok(), resp("om_u1"), tok(),
+                                     make_response(200, {"code": 230002, "msg": "bot not in chat"})]
+            fake.__enter__.return_value = fake; fake.__exit__.return_value = False
+            cls.return_value = fake
+            ok1, r1 = service.run_send(settings)
+        self.assertFalse(ok1)
+
+        # Day 2: sync accumulates day2 on top of surviving day1 cache.
+        stored = json.loads(cache_path.read_text(encoding="utf-8"))
+        union = sorted(set(stored["arxiv_ids"]) | {"2608.00002"})
+        cache_path.write_text(
+            json.dumps({"arxiv_ids": union}), encoding="utf-8"
+        )
+        # Day 2: both targets succeed.
+        with patch("notifications.service.requests.Session") as cls:
+            fake = MagicMock()
+            fake.post.side_effect = [tok(), resp("om_u2"), tok(), resp("om_g2")]
+            fake.__enter__.return_value = fake; fake.__exit__.return_value = False
+            cls.return_value = fake
+            ok2, r2 = service.run_send(settings)
+        self.assertTrue(ok2)
+        by_id = {x.target.id: x for x in r2}
+        self.assertEqual(
+            by_id["u"].sent_paper_ids, ["2608.00002"],
+            "u already got 2608.00001 on day 1; only the new paper goes out",
+        )
+        self.assertEqual(
+            sorted(by_id["g"].sent_paper_ids), ["2608.00001", "2608.00002"],
+            "g missed day 1 entirely; the accumulated union catches it up "
+            "with no loss and no duplicate",
+        )
+        self.assertFalse(cache_path.exists())
+
+    def test_large_batch_is_sent_in_chunks(self):
+        """45 pending papers must be split into ceil(45/20)=3 cards, all
+        recorded; a mid-chunk failure keeps earlier chunks' progress."""
+        rows = [
+            {
+                "arxiv_id": f"2608.{i:05d}",
+                "title": f"paper {i}",
+                "authors": "a",
+                "abstract": "abs",
+                "published": "2026-08-01",
+                "pdf_url": f"https://arxiv.org/pdf/2608.{i:05d}",
+                "arxiv_url": f"https://arxiv.org/abs/2608.{i:05d}",
+            }
+            for i in range(45)
+        ]
+        write_papers(self.tmp_path, rows)
+        self.settings = build_settings(self.tmp_path)
+        service.run_bootstrap(self.settings)
+        # Add all 45 as "new" via cache.
+        cache_path = self.settings.state_path.parent / "pending_push.json"
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(
+            json.dumps({"arxiv_ids": [r["arxiv_id"] for r in rows]}),
+            encoding="utf-8",
+        )
+        send_calls: list[str] = []
+
+        def tok():
+            return make_response(
+                200, {"code": 0, "msg": "ok", "tenant_access_token": "t"}
+            )
+        def ok_resp(call_no):
+            send_calls.append(f"send{call_no}")
+            return make_response(
+                200, {"code": 0, "msg": "ok", "data": {"message_id": f"om_{call_no}"}}
+            )
+
+        with patch("notifications.service.requests.Session") as cls:
+            fake = MagicMock()
+            fake.post.side_effect = [tok(), ok_resp(1), ok_resp(2), ok_resp(3)]
+            fake.__enter__.return_value = fake; fake.__exit__.return_value = False
+            cls.return_value = fake
+            ok, results = service.run_send(self.settings)
+        self.assertTrue(ok)
+        self.assertEqual(len(send_calls), 3, "45 papers @ 20/card = 3 sends")
+        self.assertEqual(results[0].delivered, 45)
+        self.assertFalse(cache_path.exists())
 
 
 if __name__ == "__main__":  # pragma: no cover

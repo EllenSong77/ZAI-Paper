@@ -24,6 +24,7 @@ from typing import Sequence
 
 from . import service
 from .config import ConfigError, load_settings
+from .state import StateError
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -111,6 +112,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     except FileNotFoundError as error:
         logging.getLogger("notifications").error("%s", error)
+        return 2
+    except StateError as error:
+        # Corrupt/inconsistent state files fail closed with a readable
+        # message instead of a bare traceback in CI logs.
+        logging.getLogger("notifications").error(
+            "state error: %s (fix or remove the state file, then re-run "
+            "`bootstrap`)", error
+        )
         return 2
     return 0 if ok else 1
 
