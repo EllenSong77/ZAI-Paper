@@ -9,8 +9,8 @@
 | --- | --- | --- |
 | 修改 | `main.py` | GLM review prompt 增加 translated_abstract 输出要求；`review_and_translate` 解析并缓存 translated_abstract；`row_from_candidate` 把它注入到公共 row schema（**仅这 3 处**，无 pending_push 改动） |
 | 新增 | `backfill_translated_abstracts.py` | 一次性脚本：把已存在行的英文摘要翻译为中文 `translated_abstract`，已翻译的跳过；支持 `BACKFILL_LIMIT` 试点 |
-| 修改 | `public/data/zhipu_papers.json` | 206 行论文现已 100% 覆盖 `translated_abstract`（之前 0 篇） |
-| 修改 | `public/index.html` | 论文预览 modal 在英文摘要下方增加可折叠的「中文摘要翻译」面板（CSS + HTML + JS，纯追加 47 行） |
+| 修改 | `public/data/zhipu_papers.json` | 208 行论文现已 100% 覆盖 `translated_abstract`（之前 0 篇）；其中 63 篇长摘要（>1400 字符）基于完整输入重新翻译，确保不断句 |
+| 修改 | `public/index.html` | 论文预览 modal 在「论文概览」标题旁加中英切换按钮（默认英文、点「查看中文」原地替换、无译文时按钮自动隐藏；+85 / -1 行） |
 | 新增 | `tests/test_backfill.py` | 覆盖 `backfill_translated_abstracts.py` 的网络无关辅助函数 |
 | 修改 | `README.md` | 增加「Bilingual abstracts (EN + ZH)」章节 |
 
@@ -27,11 +27,11 @@
 
 ## 三、前端 UX
 
-- 「中文摘要翻译」面板默认**折叠**（`<details>`），summary 自定义三角箭头，
-  旋转 90° 动效。
-- 面板只在 `translated_abstract` 非空时显示；为空时 `hidden=true`，不影响
-  版式。
-- 不改动英文摘要、不改变现有预览交互。
+- 「论文概览」标题右侧加胶囊状切换按钮，默认英文摘要、按钮「查看中文」；
+  点击原地替换为中文摘要，按钮变「查看英文」，再点切回。
+- 该论文无 `translated_abstract` 时按钮整隐藏，不影响版式。
+- 中文摘要较长时 modal 内部（`.preview-content`）出现纵向滚动条，不会被截断。
+- 不改变现有预览交互的其它部分。
 
 ## 四、Backfill 脚本
 
@@ -64,10 +64,11 @@ python -m unittest discover -s tests -v
 ## 六、文件清单
 
 ```
-main.py                                  # 3 处翻译改动
-backfill_translated_abstracts.py         # 新增
-public/data/zhipu_papers.json            # backfill 后
-public/index.html                        # +47 行翻译面板
+main.py                                  # 翻译改动 + v8 缓存版本 + 校验
+backfill_translated_abstracts.py         # 新增（完整摘要输入，无 1400 截断）
+public/data/zhipu_papers.json            # 208 篇全量回填
+public/index.html                        # 中英切换按钮（+85 / -1）
 tests/test_backfill.py                   # 新增
+tests/test_search.py                     # 摘要校验回归测试
 README.md
 ```

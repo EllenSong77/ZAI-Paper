@@ -30,11 +30,13 @@ original:
 
 ### Frontend display
 
-`public/index.html` adds a collapsible **「中文摘要翻译」** panel under the
-English abstract in the paper preview modal. When `translated_abstract` is
-present the panel is shown (collapsed by default); when it is empty the
-panel is hidden so the layout degrades gracefully. No regression to existing
-UI; the panel is additive.
+`public/index.html` adds a pill-shaped EN/ZH toggle button next to the
+「论文概览」 heading in the paper preview modal. The abstract defaults to
+English; clicking 「查看中文」 swaps the paragraph to the Chinese translation
+in place (the button relabels to 「查看英文」), and clicking again swaps back.
+Rows without a `translated_abstract` hide the button entirely. Long Chinese
+abstracts scroll inside the modal (`.preview-content` is scrollable) instead
+of being cut off.
 
 ### Backfilling locally
 

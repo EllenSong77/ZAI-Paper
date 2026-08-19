@@ -55,6 +55,24 @@ class BackfillParserTests(TestCase):
         self.assertEqual(backfill._classify_model(None), "glm-5-turbo")
         self.assertEqual(backfill._classify_model("  glm-5.2  "), "glm-5.2")
 
+    def test_build_prompt_keeps_full_abstract(self):
+        # Regression for the mid-sentence truncation bug: abstracts longer
+        # than the old 1400-char cap must reach the prompt in full, because
+        # the prompt contract promises a complete translation.
+        long_abstract = "x" * 2500
+        rows = [{"arxiv_id": "1", "abstract": long_abstract}]
+        prompt = backfill._build_prompt(rows)
+        # The complete 2500-char run survives into the serialized payload...
+        self.assertIn("x" * 2500, prompt)
+        # ...and the old 1400-char prefix never appears as a quoted standalone
+        # value (i.e. the abstract was not silently capped).
+        import json as _json
+        import re as _re
+        payloads = _re.findall(r'\[\{.*\}\]', prompt, _re.DOTALL)
+        self.assertTrue(payloads)
+        items = _json.loads(payloads[-1])
+        self.assertEqual(items[0]["abstract"], long_abstract)
+
 
 if __name__ == "__main__":
     unittest.main()

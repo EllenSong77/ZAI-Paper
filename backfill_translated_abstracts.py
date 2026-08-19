@@ -58,7 +58,13 @@ def _classify_model(value: str | None) -> str:
 
 def _build_prompt(rows: list[dict]) -> str:
     """Builds the abstract-translation prompt for one batch."""
-    items = [{"arxiv_id": row["arxiv_id"], "abstract": row.get("abstract", "")[:1400]} for row in rows]
+    # Full abstract, no truncation -- the prompt contract promises a complete
+    # translation, so a 1400-char input cap would silently cut the output
+    # mid-sentence for the ~30% of papers whose abstracts exceed it.
+    items = [
+        {"arxiv_id": row["arxiv_id"], "abstract": row.get("abstract", "")}
+        for row in rows
+    ]
     return (
         "把以下每篇论文的英文摘要翻译成中文。要求：\n"
         "- 仅输出 JSON 数组，与输入顺序一致；\n"
