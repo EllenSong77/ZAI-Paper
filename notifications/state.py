@@ -131,6 +131,80 @@ def fingerprint_matches(state: dict[str, Any], target: Target) -> bool:
     return entry.get("target_fingerprint") == target.fingerprint
 
 
+def baseline_ids(state: dict[str, Any], target: Target) -> set[str]:
+    """Returns every arXiv ID this target has already received.
+
+    This is the "seen set": the bootstrap history plus every successful
+    send (see :func:`record_delivery`, which admits sent IDs into the
+    baseline). It grows exactly as fast as the corpus itself, which the
+    repository already maintains, so it never outpaces the papers JSON.
+    The fallback diff ("corpus minus seen set") is therefore idempotent
+    forever: a quiet CI day with no pending-push artifact re-pushes
+    nothing, and a retry after the cache was lost with the runner still
+    delivers only to targets that never received the batch.
+
+    For entries written before the baseline split it falls back to the
+    legacy delivered map's bootstrap markers (which a pre-split pruner
+    may have capped -- re-bootstrap with ``--replace-target`` when
+    upgrading an old state whose corpus exceeded the retention window).
+    A ``baseline_ids`` field of the wrong type fails closed with
+    :class:`StateError` instead of silently acting on an empty set.
+    """
+    entry = state["targets"].get(target.id)
+    if not isinstance(entry, dict):
+        return set()
+    if "baseline_ids" in entry:
+        raw = entry["baseline_ids"]
+        if not isinstance(raw, list):
+            raise StateError(
+                f"target '{target.id}' has a malformed baseline_ids field "
+                f"({type(raw).__name__}); refusing to compute a fallback "
+                "diff from an unknown seen-set"
+            )
+        # Element-level check: a nested list (e.g. ["id", ["other"]]) would
+        # otherwise str()-coerce into garbage here and crash record_delivery
+        # with a bare TypeError AFTER the card has already been sent.
+        for arxiv_id in raw:
+            if not isinstance(arxiv_id, str):
+                raise StateError(
+                    f"target '{target.id}' baseline_ids contains a "
+                    f"non-string entry ({type(arxiv_id).__name__}); "
+                    "refusing to compute a fallback diff from a corrupted "
+                    "seen-set"
+                )
+        return set(raw)
+    # Legacy entry (pre-split): bootstrap markers lived in the delivered map.
+    delivered = entry.get("delivered")
+    if not isinstance(delivered, dict):
+        return set()
+    return {
+        str(arxiv_id)
+        for arxiv_id, slot in delivered.items()
+        if isinstance(slot, dict) and slot.get("bootstrap")
+    }
+
+
+def sent_ids(state: dict[str, Any], target: Target) -> set[str]:
+    """Returns arXiv IDs that were *actually sent* to this target.
+
+    Only entries with a non-null ``message_id`` count -- bootstrap markers
+    never do. This is the idempotency set for retrying a partially failed
+    batch: a target that already received a paper (its send succeeded even
+    though another target's failed) must not receive it again.
+    """
+    entry = state["targets"].get(target.id)
+    if not isinstance(entry, dict):
+        return set()
+    delivered = entry.get("delivered")
+    if not isinstance(delivered, dict):
+        return set()
+    return {
+        str(arxiv_id)
+        for arxiv_id, slot in delivered.items()
+        if isinstance(slot, dict) and slot.get("message_id")
+    }
+
+
 def delivered_ids(state: dict[str, Any], target: Target) -> set[str]:
     """Returns the *retained* set of arXiv IDs recently delivered to a target.
 
@@ -181,31 +255,22 @@ def bootstrap_target(
 ) -> dict[str, Any]:
     """Marks a target as bootstrapped with the supplied historical baseline.
 
-    The supplied IDs are sorted deterministically and stored only as keys; no
-    paper content is persisted.  Only the most recent ``DELIVERED_RETENTION``
-    IDs are kept so that bootstrap against a large existing corpus does not
-    bloat the state file; older historical deliveries are intentionally not
-    tracked, since the rolling window only needs to protect the next few runs
-    from duplicate pushes.
+    The full baseline is stored verbatim in ``baseline_ids`` (sorted, no
+    truncation): the fallback diff ("whole corpus minus baseline") needs
+    every historical ID, or papers older than the rolling window would be
+    misjudged as new and mass-pushed on the next cache-less run.
+
+    The ``delivered`` rolling window starts EMPTY at bootstrap: it only ever
+    records *real* sends (entries carry a non-null ``message_id``), so it can
+    drive idempotent retries. Bootstrap marking something as history is not
+    a send and must not suppress a future cache-driven push of the same ID.
     """
-    delivered: dict[str, Any] = {}
-    # Stamp each entry with a monotonically-increasing ``seq`` so the pruner
-    # can break ``delivered_at`` ties deterministically.  IDs are inserted in
-    # ascending lexicographic order so the lex-largest IDs end up with the
-    # highest ``seq`` values and survive a bootstrap-time prune.
-    for seq, arxiv_id in enumerate(sorted(set(baseline_ids)), start=1):
-        delivered[arxiv_id] = {
-            "delivered_at": utc_now_iso(),
-            "message_id": None,
-            "bootstrap": True,
-            SEQ_KEY: seq,
-        }
-    delivered = _prune_delivered(delivered)
     targets = dict(state["targets"])
     targets[target.id] = {
         "bootstrapped": True,
         "target_fingerprint": target.fingerprint,
-        "delivered": delivered,
+        "baseline_ids": sorted(set(baseline_ids)),
+        "delivered": {},
         "updated_at": utc_now_iso(),
     }
     return {"version": STATE_VERSION, "targets": targets}
@@ -228,11 +293,42 @@ def record_delivery(
     arxiv_id: str,
     message_id: str,
 ) -> dict[str, Any]:
-    """Records one successful delivery for a target and prunes the window."""
+    """Records one successful delivery for a target and prunes the window.
+
+    The ID is admitted into BOTH stores:
+    - ``baseline_ids`` (the seen set): makes the cache-less fallback diff
+      idempotent -- a quiet day or a lost-cache retry must never re-push a
+      paper this target already received. Grows with the corpus, never
+      pruned.
+    - ``delivered`` (the rolling window): short-term retry idempotency for
+      the cache-driven path (:func:`sent_ids`), capped by
+      ``DELIVERED_RETENTION``.
+
+    Legacy entries without a ``baseline_ids`` field get one created here,
+    seeded from their bootstrap markers, so old state files self-heal on
+    their first successful send.
+    """
     targets = dict(state["targets"])
     entry = dict(targets.get(target.id, {}))
     entry.setdefault("bootstrapped", True)
     entry["target_fingerprint"] = target.fingerprint
+    # Self-heal legacy entries: seed the seen set from bootstrap markers.
+    # baseline_ids() validates shape and element types, raising StateError
+    # before this send's state is persisted if the entry is poisoned.
+    if "baseline_ids" not in entry:
+        entry["baseline_ids"] = sorted(baseline_ids(state, target))
+    seen = list(entry["baseline_ids"])
+    # Defense in depth: even a hand-edited field that somehow survived the
+    # reader above cannot be written back with non-string elements.
+    for existing in seen:
+        if not isinstance(existing, str):
+            raise StateError(
+                f"target '{target.id}' baseline_ids contains a non-string "
+                f"entry ({type(existing).__name__}); refusing to record"
+            )
+    if arxiv_id not in seen:
+        seen.append(arxiv_id)
+    entry["baseline_ids"] = sorted(seen)
     delivered = dict(entry.get("delivered") or {})
     delivered[arxiv_id] = {
         "delivered_at": utc_now_iso(),

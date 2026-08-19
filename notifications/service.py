@@ -99,30 +99,36 @@ def _select_pending_rows(
     """Resolves the rows to push for a target.
 
     When ``pending_cache`` is available (incremental upstream run), it is the
-    authoritative list of this round's new papers: we trust main.py's "what
-    is new" decision verbatim and do **not** subtract the ``delivered``
-    rolling window.  The window only protects against re-pushes within a
-    single round (handled by ``service.run_send`` recording each delivery
-    as it goes), so subtracting the historical bootstrap baseline here would
-    wrongly drop a paper that main.py just flagged as new.
+    authoritative list of this round's new papers -- *minus* IDs this target
+    already received with a real ``message_id``. That subtraction is the
+    idempotency guard for retrying a partially failed batch: when target A
+    succeeded and target B failed, the cache is kept for a retry, and without
+    this filter A would receive the whole batch a second time. Bootstrap
+    markers never suppress a cache-driven push (they are not sends), so a
+    freshly bootstrapped target still gets its first real batch.
 
-    When the cache is ``None`` (no main.py run yet, or a full sync), we fall
-    back to the legacy whole-corpus-minus-recently-delivered diff so a
-    freshly bootstrapped target still catches up.
+    When the cache is ``None`` (no main.py run yet, a quiet day with no new
+    papers, or a hand-dispatched notify), we fall back to "whole corpus
+    minus the target's seen set". ``baseline_ids`` holds the bootstrap
+    history AND every successful send (``record_delivery`` admits into it),
+    so this diff is idempotent forever: a quiet day pushes nothing, and a
+    retry after the cache was lost with the runner delivers only to
+    targets that never received the batch.
     """
     rows_by_id = _rows_by_id(data)
     if pending_cache is not None:
+        already_sent = state.sent_ids(working_state, target)
         ordered = [
             arxiv_id
             for arxiv_id in pending_cache
-            if arxiv_id in rows_by_id
+            if arxiv_id in rows_by_id and arxiv_id not in already_sent
         ]
     else:
-        delivered = state.delivered_ids(working_state, target)
+        baseline = state.baseline_ids(working_state, target)
         ordered = [
             arxiv_id
             for arxiv_id in _sorted_arxiv_ids(data)
-            if arxiv_id not in delivered
+            if arxiv_id not in baseline
         ]
     return [rows_by_id[arxiv_id] for arxiv_id in ordered if arxiv_id in rows_by_id]
 
@@ -250,10 +256,11 @@ def run_dry_run(settings: Settings) -> tuple[bool, list[TargetResult]]:
         pending_ids = [
             str(row.get("arxiv_id", "")).strip() for row in pending_rows
         ]
-        delivered = state.delivered_ids(working_state, target)
+        baseline = state.baseline_ids(working_state, target)
+        sent = state.sent_ids(working_state, target)
         message = (
             f"bootstrapped=True total={len(_rows_by_id(data))} "
-            f"delivered_window={len(delivered)} "
+            f"baseline={len(baseline)} sent_window={len(sent)} "
             f"pending={len(pending_ids)} [{cache_status}]"
         )
         _log_target(logging.INFO, target, message)

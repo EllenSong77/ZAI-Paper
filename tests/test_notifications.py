@@ -652,25 +652,27 @@ class BootstrapTests(_ServiceTestBase):
         st = json.loads(self.settings.state_path.read_text(encoding="utf-8"))
         entry = st["targets"]["paper-research-group"]
         self.assertTrue(entry["bootstrapped"])
+        # Baseline split: the FULL historical id list lives in baseline_ids
+        # (never pruned), while the delivered rolling window starts empty --
+        # bootstrap marks history, it is not a send.
         self.assertEqual(
-            sorted(entry["delivered"].keys()),
+            sorted(entry.get("baseline_ids", [])),
             sorted(r["arxiv_id"] for r in sample_rows()),
         )
-        # Each baseline delivery must be tagged as bootstrap (no real send).
-        self.assertTrue(all(v["bootstrap"] for v in entry["delivered"].values()))
+        self.assertEqual(entry["delivered"], {})
 
     def test_bootstrap_idempotent_matching_fingerprint(self):
         service.run_bootstrap(self.settings)
         first = self.settings.state_path.read_text(encoding="utf-8")
-        # Second run with the same target must not rewrite the file content
-        # meaningfully (bootstrapped stays True, ids unchanged).
+        # Second run with the same target must be a strict no-op: the whole
+        # entry (seen set included) is byte-identical. A weaker keys-only
+        # assertion once let a regression that wiped baseline_ids on
+        # re-bootstrap slip through while staying green (adversarial
+        # review MUT8), which would have resurrected the daily-repush P1.
         ok, _ = service.run_bootstrap(self.settings)
         second = self.settings.state_path.read_text(encoding="utf-8")
         self.assertTrue(ok)
-        self.assertEqual(
-            sorted(json.loads(first)["targets"].keys()),
-            sorted(json.loads(second)["targets"].keys()),
-        )
+        self.assertEqual(json.loads(first), json.loads(second))
 
     def test_bootstrap_fingerprint_change_requires_replace(self):
         service.run_bootstrap(self.settings)
@@ -1283,33 +1285,36 @@ class PendingPushCacheTests(TestCase):
 
 
 class RollingDeliveredWindowTests(TestCase):
-    """state.delivered_ids stays bounded by DELIVERED_RETENTION."""
+    """baseline stays complete; only REAL sends populate the rolling window."""
 
-    def test_bootstrap_prunes_to_retention_window(self):
+    def test_baseline_is_never_pruned(self):
+        # Even with 50 more IDs than the retention window, the baseline keeps
+        # every id: the fallback diff (corpus minus baseline) needs the full
+        # history or old papers get misjudged as new (Codex review P1-2).
         target = fake_target()
-        baseline = [f"2401.{i:05d}" for i in range(state.DELIVERED_RETENTION + 50)]
+        n = state.DELIVERED_RETENTION + 50
+        baseline = [f"2401.{i:05d}" for i in range(n)]
         st = state.bootstrap_target({"version": 1, "targets": {}}, target, baseline)
-        delivered = state.delivered_ids(st, target)
-        self.assertEqual(len(delivered), state.DELIVERED_RETENTION)
-        # Pruning must be deterministic and keep the most-recent timestamps;
-        # since bootstrap stamps everything at "now", the surviving set is the
-        # lexicographically-largest arxiv_ids.
-        largest_kept = sorted(baseline, reverse=True)[0]
-        self.assertIn(largest_kept, delivered)
+        self.assertEqual(len(state.baseline_ids(st, target)), n)
+        # And the delivered window is empty at bootstrap (no sends yet).
+        self.assertEqual(state.delivered_ids(st, target), set())
+        self.assertEqual(state.sent_ids(st, target), set())
 
     def test_record_delivery_prunes_after_window_overflow(self):
+        # Fill the window with REAL sends (record_delivery), one past the cap.
         target = fake_target()
-        fill = state.DELIVERED_RETENTION
-        baseline = [f"2401.{i:05d}" for i in range(fill)]
-        st = state.bootstrap_target({"version": 1, "targets": {}}, target, baseline)
-        self.assertEqual(len(state.delivered_ids(st, target)), fill)
+        st = state.bootstrap_target({"version": 1, "targets": {}}, target, [])
+        for i in range(state.DELIVERED_RETENTION):
+            st = state.record_delivery(st, target, f"2401.{i:05d}", "om_x")
 
-        # Recording a brand-new one should cap back at the window size.
+        # Recording one more should cap back at the window size, and the
+        # brand-new id must survive the prune (highest seq wins ties).
         st = state.record_delivery(st, target, "9999.99999", "om_test")
         self.assertEqual(
             len(state.delivered_ids(st, target)), state.DELIVERED_RETENTION
         )
         self.assertIn("9999.99999", state.delivered_ids(st, target))
+        self.assertIn("9999.99999", state.sent_ids(st, target))
 
 
 class PendingPushDrivenSendTests(_ServiceTestBase):
@@ -1336,9 +1341,10 @@ class PendingPushDrivenSendTests(_ServiceTestBase):
 
     def test_send_uses_cache_when_present_and_deletes_on_success(self):
         # Bootstrap against the existing papers, then write a cache that names
-        # one of those rows as "new this round". The rolling window already
-        # considers every row delivered after bootstrap, so the ONLY way that
-        # row can be sent again is if the cache drives it.
+        # one of those rows as "new this round". Bootstrap history lives in
+        # the seen set (baseline_ids) and the delivered window starts empty,
+        # so this row is sendable exactly because the cache drives it: the
+        # cache-driven path only subtracts real sends (sent_ids).
         service.run_bootstrap(self.settings)
         existing_id = sample_rows()[0]["arxiv_id"]
         cache_path = self._write_pending([existing_id])
@@ -1426,6 +1432,303 @@ class FallbackDiffTests(_ServiceTestBase):
         self.assertEqual(results[0].delivered, 1)
         self.assertEqual(results[0].sent_paper_ids, ["2608.99999"])
 
+
+
+class ReviewRegressionScenarios(_ServiceTestBase):
+    """Integration scenarios for the Codex-review P1 findings.
+
+    Each test reconstructs the exact production condition the review
+    reported: corpus larger than the retention window, and multi-target
+    partial failure followed by a retry.
+    """
+
+    def _net(self, send_side_effect) -> MagicMock:
+        token = make_response(
+            status_code=200,
+            json_body={"code": 0, "msg": "ok", "tenant_access_token": "ttok"},
+        )
+        fake = MagicMock()
+        fake.post.side_effect = [token, *send_side_effect]
+        fake.__enter__.return_value = fake
+        fake.__exit__.return_value = False
+        return fake
+
+    def _rows_n(self, n: int) -> list[dict]:
+        return [
+            {
+                "arxiv_id": f"2401.{i:05d}",
+                "title": f"paper {i}",
+                "authors": "a",
+                "abstract": "abs",
+                "published": "2024-01-01",
+                "pdf_url": f"https://arxiv.org/pdf/2401.{i:05d}",
+                "arxiv_url": f"https://arxiv.org/abs/2401.{i:05d}",
+            }
+            for i in range(n)
+        ]
+
+    def test_corpus_larger_than_window_does_not_repush_history(self):
+        """P1-2: 208 papers > 200-window must not misjudge the 8 oldest.
+
+        bootstrap() against a corpus larger than DELIVERED_RETENTION, then
+        a cache-less send (fallback diff): only genuinely new papers may be
+        pushed -- the papers that fell outside the rolling window are still
+        in baseline_ids and therefore NOT pending.
+        """
+        n = state.DELIVERED_RETENTION + 8
+        write_papers(self.tmp_path, self._rows_n(n))
+        self.settings = build_settings(self.tmp_path)
+        service.run_bootstrap(self.settings)
+
+        # Add one brand-new paper, keep the cache absent (fallback path).
+        rows = self._rows_n(n) + [dict(self._rows_n(1)[0], arxiv_id="2608.99999")]
+        write_papers(self.tmp_path, rows)
+        self.settings = build_settings(self.tmp_path)
+
+        send_resp = make_response(
+            200, {"code": 0, "msg": "ok", "data": {"message_id": "om_x"}}
+        )
+        with patch("notifications.service.requests.Session") as session_cls:
+            session_cls.return_value = self._net([send_resp])
+            ok, results = service.run_send(self.settings)
+        self.assertTrue(ok)
+        # ONLY the genuinely new paper is pending -- the 8 oldest (outside
+        # the rolling window but inside baseline_ids) must not reappear.
+        self.assertEqual(results[0].delivered, 1)
+        self.assertEqual(results[0].sent_paper_ids, ["2608.99999"])
+
+    def test_partial_failure_retry_does_not_resend_to_succeeded_target(self):
+        """P1-3: A ok + B fail -> cache kept -> retry must NOT re-push to A.
+
+        Targets: user-target succeeds, group-target fails (bot not in chat).
+        The cache survives for a retry; on the retry run user-target must
+        get ZERO cards (its sends are recorded with real message_ids) while
+        group-target receives the full batch.
+        """
+        self.settings = build_settings(
+            self.tmp_path,
+            targets_json=json.dumps(
+                [
+                    {
+                        "id": "user-target",
+                        "name": "user",
+                        "receive_id_type": "open_id",
+                        "receive_id": "ou_u",
+                    },
+                    {
+                        "id": "group-target",
+                        "name": "group",
+                        "receive_id_type": "chat_id",
+                        "receive_id": "oc_g",
+                    },
+                ]
+            ),
+        )
+        service.run_bootstrap(self.settings)
+        cache_path = self.settings.state_path.parent / "pending_push.json"
+        cache_path.write_text(
+            json.dumps({"arxiv_ids": ["2608.00001"]}), encoding="utf-8"
+        )
+
+        ok_token = make_response(
+            200, {"code": 0, "msg": "ok", "tenant_access_token": "ttok"}
+        )
+        ok_send = make_response(
+            200, {"code": 0, "msg": "ok", "data": {"message_id": "om_a"}}
+        )
+        fail_token = make_response(
+            200, {"code": 0, "msg": "ok", "tenant_access_token": "ttok"}
+        )
+        fail_send = make_response(
+            200, {"code": 230002, "msg": "bot not in chat"}
+        )
+        # First run: user (token+send both ok), group (token ok, send fails)
+        # -> overall failure, cache kept for retry.
+        with patch("notifications.service.requests.Session") as session_cls:
+            fake = MagicMock()
+            fake.post.side_effect = [ok_token, ok_send, fail_token, fail_send]
+            fake.__enter__.return_value = fake
+            fake.__exit__.return_value = False
+            session_cls.return_value = fake
+            ok, results = service.run_send(self.settings)
+        self.assertFalse(ok)
+        self.assertTrue(cache_path.exists(), "cache must survive a partial failure")
+
+        # Retry run: group now succeeds too. user-target must be skipped
+        # entirely (already sent -> sent_ids dedup), so only the group's
+        # token + send happen (2 calls total).
+        retry_token = make_response(
+            200, {"code": 0, "msg": "ok", "tenant_access_token": "ttok"}
+        )
+        retry_send = make_response(
+            200, {"code": 0, "msg": "ok", "data": {"message_id": "om_g"}}
+        )
+        with patch("notifications.service.requests.Session") as session_cls:
+            fake = MagicMock()
+            fake.post.side_effect = [retry_token, retry_send]
+            fake.__enter__.return_value = fake
+            fake.__exit__.return_value = False
+            session_cls.return_value = fake
+            ok, results = service.run_send(self.settings)
+        self.assertTrue(ok)
+        by_id = {r.target.id: r for r in results}
+        self.assertEqual(
+            by_id["user-target"].sent_paper_ids, [],
+            "succeeded target must not receive the batch again on retry",
+        )
+        self.assertEqual(by_id["group-target"].sent_paper_ids, ["2608.00001"])
+        self.assertFalse(cache_path.exists(), "full success discards the cache")
+
+    def test_main_leaves_failed_cache_untouched_next_sync(self):
+        """P2-4: a round with no new papers must not delete an unsent cache.
+
+        The cache lifecycle is owned by the notification worker; main.py
+        only writes it when new papers exist and never unlinks it.
+        """
+        from main import main as main_main  # noqa: F401  (import guard)
+        source = Path("main.py").read_text(encoding="utf-8")
+        self.assertNotIn(
+            "pending_path.unlink()",
+            source,
+            "main.py must never delete the pending cache (send owns it)",
+        )
+
+    def test_quiet_day_after_successful_send_pushes_nothing(self):
+        """Adversarial-review P1 regression: the fallback diff must be
+        idempotent across days.
+
+        Day 1: cache-driven send delivers a new paper (success, cache
+        discarded). Day 2: no new papers -> no cache (CI: no artifact ->
+        download fails -> fallback). The fallback diff must push NOTHING:
+        record_delivery admits the sent id into baseline_ids (the seen
+        set), so corpus-minus-seen-set excludes it. Before this fix the
+        fallback subtracted only the bootstrap baseline and re-pushed
+        every paper ever sent on each quiet day.
+        """
+        service.run_bootstrap(self.settings)
+        new_id = sample_rows()[0]["arxiv_id"]
+        cache_path = self.settings.state_path.parent / "pending_push.json"
+        cache_path.write_text(
+            json.dumps({"arxiv_ids": [new_id]}), encoding="utf-8"
+        )
+        send_resp = make_response(
+            200, {"code": 0, "msg": "ok", "data": {"message_id": "om_1"}}
+        )
+        with patch("notifications.service.requests.Session") as session_cls:
+            session_cls.return_value = self._net([send_resp])
+            ok, results = service.run_send(self.settings)
+        self.assertTrue(ok)
+        self.assertEqual(results[0].sent_paper_ids, [new_id])
+        self.assertFalse(cache_path.exists(), "success discards the cache")
+
+        # Day 2: cache absent -> fallback path must push zero papers.
+        ok2, results2 = service.run_send(self.settings)
+        self.assertTrue(ok2)
+        self.assertEqual(
+            results2[0].sent_paper_ids, [],
+            "quiet-day fallback must not re-push already-sent papers",
+        )
+        # Explicit seen-set assertion: on a small corpus (< retention
+        # window) the delivered rolling window alone would also suppress
+        # the re-push, masking a regression that drops the baseline_ids
+        # admission (adversarial MUT1). Assert the property directly.
+        st = json.loads(self.settings.state_path.read_text(encoding="utf-8"))
+        self.assertIn(
+            new_id,
+            st["targets"]["paper-research-group"]["baseline_ids"],
+            "record_delivery must admit sent ids into the seen set",
+        )
+
+    def test_record_delivery_admits_into_baseline(self):
+        """record_delivery writes the id into baseline_ids (seen set), not
+        just the rolling window -- the property the quiet-day idempotency
+        rests on."""
+        target = fake_target()
+        st = state.bootstrap_target(
+            {"version": 1, "targets": {}}, target, ["2401.00001"]
+        )
+        st = state.record_delivery(st, target, "2608.99999", "om_x")
+        seen = state.baseline_ids(st, target)
+        self.assertIn("2401.00001", seen, "bootstrap history stays")
+        self.assertIn("2608.99999", seen, "successful send is admitted")
+
+    def test_malformed_baseline_ids_fails_closed(self):
+        """A corrupted baseline_ids field must raise StateError instead of
+        silently behaving like an empty seen set (which would mass-push)."""
+        target = fake_target()
+        st = {
+            "version": 1,
+            "targets": {
+                target.id: {
+                    "bootstrapped": True,
+                    "target_fingerprint": target.fingerprint,
+                    "baseline_ids": "2401.00001",  # wrong type: str
+                    "delivered": {},
+                }
+            },
+        }
+        with self.assertRaises(state.StateError):
+            state.baseline_ids(st, target)
+
+    def test_nested_list_baseline_ids_rejected_before_any_card_is_sent(self):
+        """Adversarial review P3: a nested-list baseline_ids (hand-edited
+        state) used to str()-coerce into garbage and crash record_delivery
+        with a bare TypeError AFTER the card had gone out, looping every
+        run. Element-level validation must reject it in _select_pending_rows
+        -- before any Feishu call happens."""
+        poisoned = {
+            "version": 1,
+            "targets": {
+                "paper-research-group": {
+                    "bootstrapped": True,
+                    "target_fingerprint": self.settings.targets[
+                        0
+                    ].fingerprint,
+                    "baseline_ids": ["2608.00001", ["2608.00002"]],
+                    "delivered": {},
+                }
+            },
+        }
+        self.settings.state_path.parent.mkdir(parents=True, exist_ok=True)
+        self.settings.state_path.write_text(
+            json.dumps(poisoned), encoding="utf-8"
+        )
+        with patch("notifications.service.requests.Session") as sess:
+            with self.assertRaises(state.StateError):
+                service.run_send(self.settings)  # cache absent -> fallback
+            sess.assert_not_called(), "no HTTP call may happen on poisoned state"
+
+    def test_legacy_state_self_heals_on_first_send(self):
+        """Legacy entry (no baseline_ids key): bootstrap markers seed the
+        seen set, and record_delivery persists the upgraded field."""
+        target = fake_target()
+        legacy = {
+            "version": 1,
+            "targets": {
+                target.id: {
+                    "bootstrapped": True,
+                    "target_fingerprint": target.fingerprint,
+                    "delivered": {
+                        "2401.00001": {
+                            "bootstrap": True,
+                            "delivered_at": "t",
+                            "message_id": None,
+                        },
+                    },
+                }
+            },
+        }
+        self.assertEqual(
+            state.baseline_ids(legacy, target),
+            {"2401.00001"},
+            "legacy markers are readable as the seen set",
+        )
+        st2 = state.record_delivery(legacy, target, "2608.99999", "om_y")
+        self.assertEqual(
+            state.baseline_ids(st2, target),
+            {"2401.00001", "2608.99999"},
+            "first send persists a proper baseline_ids field",
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

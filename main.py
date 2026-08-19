@@ -1250,9 +1250,15 @@ def main() -> None:
 
     # Pending-push cache consumed by `python -m notifications`.  Only written
     # for incremental syncs (full syncs treat every paper as "new" and would
-    # flood targets).  Each run rewrites the cache; notifications pops and
-    # deletes it on a successful send.  Lives next to the notification state
-    # so it stays out of the published GitHub Pages output.
+    # flood targets).  Lives next to the notification state so it stays out
+    # of the published GitHub Pages output.
+    #
+    # Deliberately NO else-branch that deletes the cache when a round has no
+    # new papers: a previous round's cache may still be awaiting a send
+    # retry (partial Feishu failure), and deleting it here would silently
+    # drop that batch. The cache lifecycle is owned exclusively by the
+    # notification worker -- it is discarded only after every target has
+    # been sent to successfully.
     pending_path = ROOT / ".notification-state" / "pending_push.json"
     if mode != "full" and new_ids:
         pending_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1269,10 +1275,6 @@ def main() -> None:
             ),
             encoding="utf-8",
         )
-    elif pending_path.exists():
-        # No new papers this round: clear a stale pending cache so the next
-        # notification run does not re-push yesterday's batch.
-        pending_path.unlink()
     print(
         json.dumps(
             {

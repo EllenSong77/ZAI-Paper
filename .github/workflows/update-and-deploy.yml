@@ -102,6 +102,22 @@ jobs:
             done
           fi
 
+      # Hand the per-run new-paper cache to the notify job. The notify job
+      # does a fresh checkout, so the pending_push.json written by main.py
+      # on this runner's disk would otherwise never reach it and `send`
+      # would silently fall back to the legacy full-diff branch. On days
+      # with no new papers main.py writes no cache at all, so no artifact
+      # is uploaded; notify's download step then fails harmlessly
+      # (continue-on-error) and send falls back to the idempotent
+      # corpus-minus-seen-set diff, which pushes nothing on such days.
+      - name: Upload pending-push cache
+        uses: actions/upload-artifact@v4
+        with:
+          name: pending-push
+          path: .notification-state/pending_push.json
+          if-no-files-found: ignore
+          retention-days: 7
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
@@ -198,6 +214,20 @@ jobs:
       - name: Install requirements
         if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
         run: pip install -r requirements.txt
+
+      # Restore the per-run new-paper cache uploaded by the update job. The
+      # fresh checkout above does not contain pending_push.json (it is never
+      # committed), so without this download `send` would never see the
+      # cache and would silently fall back to the legacy full-diff branch.
+      - name: Download pending-push cache
+        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: pending-push
+          path: .notification-state
+        continue-on-error: true
+        # A missing artifact (e.g. hand-dispatched notify run without a
+        # preceding update) is not fatal: send falls back to the full diff.
 
       - name: Run notification command
         id: notify_cmd
