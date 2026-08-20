@@ -1741,52 +1741,32 @@ class ReviewRegressionScenarios(_ServiceTestBase):
         Day 1 sync writes [A]; delivery fails everywhere (cache kept).
         Day 2 sync produces [B]; the accumulating write must persist the
         union [A, B] -- the original whole-file rewrite kept only [B] and
-        permanently dropped A. (Validates the main.py write logic inline,
-        mirroring its exact code path, because spinning up a real sync is
-        network-bound.)
+        permanently dropped A. Calls the REAL main.write_pending_push (an
+        earlier cut of this test mirrored the logic inline, which stayed
+        green even when the production code was mutated).
         """
-        import json as _json
-        from pathlib import Path as _Path
-        from tempfile import TemporaryDirectory as _TD
+        from main import write_pending_push
 
-        with _TD() as tmp:
-            cache = _Path(tmp) / "pending_push.json"
-            # Day 1: write [A] (mirrors main.py's accumulating branch).
-            new_ids = ["2401.00001"]
-            accumulated = list(new_ids)
-            if cache.exists():
-                previous = _json.loads(cache.read_text(encoding="utf-8"))
-                previous_ids = previous.get("arxiv_ids")
-                if isinstance(previous_ids, list):
-                    seen = set(accumulated)
-                    for raw in previous_ids:
-                        aid = str(raw).strip()
-                        if aid and aid not in seen:
-                            seen.add(aid)
-                            accumulated.append(aid)
-            cache.write_text(_json.dumps({"arxiv_ids": accumulated}))
+        with TemporaryDirectory() as tmp:
+            cache = Path(tmp) / "pending_push.json"
+            # Day 1: write [A].
+            write_pending_push(cache, ["2401.00001"], "public/data/x.json")
+            # Day 2: write [B] on top of the still-undelivered [A].
+            write_pending_push(cache, ["2401.00002"], "public/data/x.json")
+            # Day 3 (quiet day): empty batch must leave the cache untouched.
+            write_pending_push(cache, [], "public/data/x.json")
 
-            # Day 2: same code path with [B].
-            new_ids = ["2401.00002"]
-            accumulated = list(new_ids)
-            if cache.exists():
-                previous = _json.loads(cache.read_text(encoding="utf-8"))
-                previous_ids = previous.get("arxiv_ids")
-                if isinstance(previous_ids, list):
-                    seen = set(accumulated)
-                    for raw in previous_ids:
-                        aid = str(raw).strip()
-                        if aid and aid not in seen:
-                            seen.add(aid)
-                            accumulated.append(aid)
-            cache.write_text(_json.dumps({"arxiv_ids": accumulated}))
-
-            stored = _json.loads(cache.read_text(encoding="utf-8"))["arxiv_ids"]
+            stored = json.loads(cache.read_text(encoding="utf-8"))["arxiv_ids"]
             self.assertEqual(
                 sorted(stored), ["2401.00001", "2401.00002"],
                 "day-2 batch must accumulate on top of the awaiting day-1 "
-                "batch, not overwrite it",
+                "batch, not overwrite it; a quiet day must not touch it",
             )
+            # Corrupt cache is tolerated: today's batch wins.
+            cache.write_text("{not json", encoding="utf-8")
+            write_pending_push(cache, ["2608.99999"], "public/data/x.json")
+            stored = json.loads(cache.read_text(encoding="utf-8"))["arxiv_ids"]
+            self.assertEqual(stored, ["2608.99999"])
 
     def test_accumulated_batch_survives_until_all_targets_succeed(self):
         """End-to-end accumulation scenario: B fails day 1, cache keeps A's
@@ -1880,26 +1860,36 @@ class ReviewRegressionScenarios(_ServiceTestBase):
             json.dumps({"arxiv_ids": [r["arxiv_id"] for r in rows]}),
             encoding="utf-8",
         )
-        send_calls: list[str] = []
-
         def tok():
             return make_response(
                 200, {"code": 0, "msg": "ok", "tenant_access_token": "t"}
             )
-        def ok_resp(call_no):
-            send_calls.append(f"send{call_no}")
+        def ok_resp():
             return make_response(
-                200, {"code": 0, "msg": "ok", "data": {"message_id": f"om_{call_no}"}}
+                200, {"code": 0, "msg": "ok", "data": {"message_id": "om_x"}}
             )
 
         with patch("notifications.service.requests.Session") as cls:
             fake = MagicMock()
-            fake.post.side_effect = [tok(), ok_resp(1), ok_resp(2), ok_resp(3)]
+            # MagicMock side_effect consumes lazily, so three responses only
+            # succeed if three real send calls happen; a fourth would raise
+            # StopIteration. Count actual message sends from call_args_list
+            # (NOT from side-effect closures -- those execute at list-build
+            # time and would turn the assertion into a tautology, which is
+            # exactly how this test once lied while the chunking was broken).
+            fake.post.side_effect = [tok(), ok_resp(), ok_resp(), ok_resp()]
             fake.__enter__.return_value = fake; fake.__exit__.return_value = False
             cls.return_value = fake
             ok, results = service.run_send(self.settings)
         self.assertTrue(ok)
-        self.assertEqual(len(send_calls), 3, "45 papers @ 20/card = 3 sends")
+        send_call_count = sum(
+            1
+            for call in fake.post.call_args_list
+            if call.args and "messages" in str(call.args[0])
+        )
+        self.assertEqual(
+            send_call_count, 3, "45 papers @ 20/card = exactly 3 real sends"
+        )
         self.assertEqual(results[0].delivered, 45)
         self.assertFalse(cache_path.exists())
 

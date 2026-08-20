@@ -1261,52 +1261,11 @@ def main() -> None:
     # for incremental syncs (full syncs treat every paper as "new" and would
     # flood targets).  Lives next to the notification state so it stays out
     # of the published GitHub Pages output.
-    #
-    # ACCUMULATING write: merge this round's new ids into any cache that is
-    # still awaiting delivery. A previous round may have kept its batch
-    # because some target failed; overwriting the file wholesale (the
-    # original implementation) would permanently drop that undelivered
-    # batch once today's papers arrive. The cache is released only by the
-    # notification worker after EVERY target has been sent to
-    # successfully -- until then it only grows, and `send` idempotently
-    # skips targets that already received a given id (sent_ids).
-    pending_path = ROOT / ".notification-state" / "pending_push.json"
-    if mode != "full" and new_ids:
-        accumulated: list[str] = list(new_ids)
-        if pending_path.exists():
-            try:
-                previous = json.loads(
-                    pending_path.read_text(encoding="utf-8")
-                )
-                previous_ids = previous.get("arxiv_ids") if isinstance(
-                    previous, dict
-                ) else None
-                if isinstance(previous_ids, list):
-                    seen_ids = set(accumulated)
-                    for raw in previous_ids:
-                        arxiv_id = str(raw).strip()
-                        if arxiv_id and arxiv_id not in seen_ids:
-                            seen_ids.add(arxiv_id)
-                            accumulated.append(arxiv_id)
-                # A malformed cache (not a dict / no list) is treated as
-                # absent: today's batch wins, matching how the notification
-                # worker tolerates a corrupt cache.
-            except (OSError, json.JSONDecodeError):
-                pass  # unreadable cache -> start fresh with today's batch
-        pending_path.parent.mkdir(parents=True, exist_ok=True)
-        pending_path.write_text(
-            json.dumps(
-                {
-                    "arxiv_ids": accumulated,
-                    "produced_at": datetime.now(timezone.utc)
-                    .strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "papers_path": str(output.relative_to(ROOT)),
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+    write_pending_push(
+        pending_path=ROOT / ".notification-state" / "pending_push.json",
+        new_ids=new_ids if mode != "full" else [],
+        papers_path=str(output.relative_to(ROOT)),
+    )
     print(
         json.dumps(
             {
@@ -1319,6 +1278,61 @@ def main() -> None:
             },
             ensure_ascii=False,
         )
+    )
+
+
+def write_pending_push(
+    pending_path: Path, new_ids: list[str], papers_path: str
+) -> None:
+    """Accumulating write of the per-run pending-push cache.
+
+    Merges this round's new ids into any cache that is still awaiting
+    delivery: a previous round may have kept its batch because some target
+    failed, and overwriting the file wholesale would permanently drop that
+    undelivered batch once today's papers arrive. The cache is released
+    only by the notification worker after EVERY target has been sent to
+    successfully -- until then it only grows, and `send` idempotently skips
+    targets that already received a given id (sent_ids).
+
+    An empty ``new_ids`` (quiet day or full sync) leaves an existing cache
+    untouched; a malformed/unreadable cache is treated as absent.
+    """
+    if not new_ids:
+        return
+    accumulated: list[str] = list(new_ids)
+    if pending_path.exists():
+        try:
+            previous = json.loads(
+                pending_path.read_text(encoding="utf-8")
+            )
+            previous_ids = previous.get("arxiv_ids") if isinstance(
+                previous, dict
+            ) else None
+            if isinstance(previous_ids, list):
+                seen_ids = set(accumulated)
+                for raw in previous_ids:
+                    arxiv_id = str(raw).strip()
+                    if arxiv_id and arxiv_id not in seen_ids:
+                        seen_ids.add(arxiv_id)
+                        accumulated.append(arxiv_id)
+            # A malformed cache (not a dict / no list) is treated as
+            # absent: today's batch wins, matching how the notification
+            # worker tolerates a corrupt cache.
+        except (OSError, json.JSONDecodeError):
+            pass  # unreadable cache -> start fresh with today's batch
+    pending_path.parent.mkdir(parents=True, exist_ok=True)
+    pending_path.write_text(
+        json.dumps(
+            {
+                "arxiv_ids": accumulated,
+                "produced_at": datetime.now(timezone.utc)
+                .strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "papers_path": papers_path,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
     )
 
 

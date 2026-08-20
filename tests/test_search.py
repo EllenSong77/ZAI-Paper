@@ -633,3 +633,31 @@ class RuleTests(TestCase):
             "这是中文摘要。",
             "translated_abstract must survive the load round-trip",
         )
+
+    def test_prompt_embeds_full_abstract_without_truncation(self) -> None:
+        """Contract: the full abstract reaches the LLM prompt.
+
+        The original implementation sliced item["abstract"][:1400], which
+        produced mid-sentence Chinese translations for 63 of 206 papers
+        (Codex review P1). This pins the no-truncation contract so a
+        regression cannot ship silently again.
+        """
+        from main import prompt
+
+        long_abstract = "xUNIQUEMARKERx" * 300  # 4200 chars, well past 1400
+        items = [
+            {
+                "arxiv_id": "2608.00001",
+                "title": "T",
+                "authors": "A",
+                "author_affiliations": [],
+                "external_affiliations": [],
+                "abstract": long_abstract,
+            }
+        ]
+        rendered = prompt(items)
+        self.assertIn(
+            long_abstract, rendered,
+            "the prompt must embed the COMPLETE abstract (the [:1400] "
+            "truncation once broke 63 translations mid-sentence)",
+        )
