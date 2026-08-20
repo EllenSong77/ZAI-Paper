@@ -126,15 +126,14 @@ README.md
 ## 四、推送设计（本 PR 的核心）
 
 每轮增量同步时，`main.py` 只把**本轮新增的 arXiv id** 写入小缓存
-`.notification-state/pending_push.json`（不进 git、不进 Pages）。
+`.notification-state/pending_push.json`（进 Git 持久化，但不进 Pages）。
 
 ```
-incremental sync → main.py 写 pending_push.json = {本轮新 ids}
+incremental sync → main.py 将本轮新 ids 追加到 pending_push.json
                                        │
                                        ▼
-send: pending_push.json 作为本轮真值 ──► 推一张卡片 ──► 成功则删缓存
-       （缓存缺失时回退到「全集 - 已 delivered 滚窗」diff，
-         这样刚 bootstrap 的 target 仍能补全历史。）
+send: pending_push.json 减去各目标 baseline ──► 分批推送 ──► 全部成功后删队列
+       （队列缺失时回退到「全集 - 完整 baseline」diff。）
 ```
 
 `delivered` 状态只保留 `DELIVERED_RETENTION = 200` 条滚窗，作为短期内

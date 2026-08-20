@@ -58,25 +58,24 @@ papers to configured Feishu targets (groups or individuals). It reads the
 final `public/data/zhipu_papers.json` produced by `main.py` and never modifies
 the papers schema.
 
-The pending-paper source is **per-run**: during an incremental sync `main.py`
-writes a small `.notification-state/pending_push.json` cache containing only
-the arXiv IDs that were *new* this round. `send` pops that cache, pushes one
-card per round, then deletes the cache on full success:
+Incremental syncs append new arXiv IDs to a durable
+`.notification-state/pending_push.json` queue. GitHub Actions commits that
+queue before notification begins, so it survives runner changes and failed
+runs. The queue is deleted only after every target succeeds:
 
 ```
-incremental sync: main.py writes pending_push.json = {new ids this round}
+incremental sync: main.py appends new ids to pending_push.json
                                           │
                                           ▼
-send:  take pending_push.json as authoritative  ──► push one card  ──► delete cache
-       (if absent, fall back to full-corpus minus recently-delivered)
+send:  queue minus each target's baseline  ──► push cards  ──► delete on full success
+       (if absent, fall back to full-corpus minus the complete baseline)
 ```
 
-The on-disk state (`delivered` map per target) is just a **rolling window**
-capped at `DELIVERED_RETENTION` entries — a safety net against duplicate
-pushes within a short window, not a full delivery history that needs long-
-term maintenance. Data sync can therefore succeed while a notification
-fails, and the next run still catches up via the pending cache (or the
-fallback diff on a freshly bootstrapped target).
+Each target stores a complete `baseline_ids` set for permanent idempotency and
+a bounded `delivered` window for recent delivery diagnostics. Data sync can
+therefore succeed while a notification fails, and the next run resumes from
+the committed queue without resending papers to targets that already
+succeeded.
 
 ### Architecture
 
@@ -99,9 +98,8 @@ Design rules the module enforces:
 - State lives in `.notification-state/feishu.json` (outside `public`, so it is
   never published to Pages). It is committed to Git so retries survive across
   runs; only the `*.tmp` atomic-write scratch files are git-ignored.
-- The per-run cache `pending_push.json` lives next to the state file (also
-  outside `public`) and is **not** committed — it is regenerated every
-  incremental run and consumed/deleted by `send`.
+- The durable `pending_push.json` queue lives next to the state file and is
+  committed to Git, but remains outside `public` and is never published.
 - An **un-bootstrapped** target is *fail-closed*: `send` will never mass-mail
   history. You must explicitly `bootstrap` first.
 - If a target's `receive_id`/type changes, the fingerprint no longer matches
@@ -187,11 +185,9 @@ python -m notifications bootstrap --target <id> --replace-target   # reset a tar
 python -m notifications send           # deliver pending papers to bootstrapped, fingerprint-matching targets
 ```
 
-Each `send` round builds a single card containing every pending paper (sorted
-by `(published, arxiv_id)`) and sends it in one Feishu call. If the call
-succeeds, every pending arXiv id is recorded as delivered with that
-`message_id`; if it fails, none are recorded and the next run retries the
-whole batch (cache-driven runs keep the cache on partial failure).
+Each `send` round sorts pending papers by `(published, arxiv_id)` and splits
+them into cards of at most 20 papers. Successful chunks are recorded
+immediately; a retry sends only the remaining papers for each target.
 
 ### First-time go-live checklist
 
@@ -233,9 +229,9 @@ python -m notifications bootstrap --target <that-id> --replace-target
 
 Safe to just re-run:
 
-- The pending-push cache is only deleted on **full** success; a partially
-  failed round keeps the cache so the operator can retry the same batch.
-- Already-delivered papers (within the rolling window) are deduplicated.
+- The pending queue is only deleted on **full** success; a partially failed
+  round keeps it for the next scheduled or manual run.
+- Already handled papers are deduplicated by each target's complete baseline.
 - A target failure never rolls back the state of a target that succeeded.
 - On scheduled runs, transient Feishu/HTTP errors are retried with bounded
   exponential backoff (429/5xx/network); 4xx permission/argument errors are

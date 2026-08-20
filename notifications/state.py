@@ -1,17 +1,14 @@
 """Atomic, per-target notification state.
 
 The state file lives outside ``public`` so that it is never published to GitHub
-Pages.  Each target stores only a SHA-256 fingerprint of its receive identity
-plus the set of *recently* delivered arXiv IDs.  The real ``receive_id`` is
-never written to disk.
+Pages. Each target stores a SHA-256 fingerprint, a complete baseline of papers
+already handled, and a bounded delivery audit window. The real ``receive_id``
+is never written to disk.
 
-Design (revised): instead of keeping an unbounded list of every arXiv ID ever
-pushed, the ``delivered`` map is a rolling window capped by
-``DELIVERED_RETENTION``.  The job of "which papers are new this round" is owned
-by the upstream pipeline (``main.py``), which writes a small
-``pending_push.json`` cache containing only this run's new IDs.  ``service.py``
-pops that cache, pushes, then ``record_delivery`` trims the rolling window so
-the on-disk state stays bounded.
+The Git-persisted ``pending_push.json`` queue decides what needs delivery.
+``baseline_ids`` provides permanent per-target idempotency, while the
+``delivered`` map is a rolling audit window capped by
+``DELIVERED_RETENTION``.
 
 Author:
     Ellen Song <jiaqi.song@z.ai>
@@ -29,19 +26,13 @@ from .config import Target
 
 STATE_VERSION = 1
 
-#: Maximum number of recently-delivered arXiv IDs kept per target.  Anything
-#: beyond this is pruned on every write; the set is intended only as a safety
-#: net against duplicate pushes within a short window, not as a full delivery
-#: history.  Older entries can always be reconstructed from the published
-#: papers JSON plus the live ``receive_id`` chat log.
+#: Maximum number of recently delivered arXiv IDs kept per target for audit
+#: and diagnostics. Permanent idempotency is provided by ``baseline_ids``.
 DELIVERED_RETENTION = 200
 
-#: Per-target monotonically-increasing admission counter.  Every recorded or
-#: bootstrapped entry stamps its slot with the next ``seq`` value, and
-#: pruning ranks by (``delivered_at``, ``seq``) descending so the most
-#: recently-admitted ID is always kept even when multiple writes land inside
-#: the same ``delivered_at`` second.  This avoids losing a brand-new entry
-#: to timestamp ties during a fast bootstrap+send sequence.
+#: Per-target monotonically increasing delivery counter. Every recorded send
+#: stamps its slot with the next ``seq`` value. Pruning ranks by
+#: (``delivered_at``, ``seq``) so timestamp ties cannot discard a new entry.
 SEQ_KEY = "seq"
 
 #: Default content for the committed empty-state file.  An empty ``targets``
@@ -139,9 +130,9 @@ def baseline_ids(state: dict[str, Any], target: Target) -> set[str]:
     baseline). It grows exactly as fast as the corpus itself, which the
     repository already maintains, so it never outpaces the papers JSON.
     The fallback diff ("corpus minus seen set") is therefore idempotent
-    forever: a quiet CI day with no pending-push artifact re-pushes
-    nothing, and a retry after the cache was lost with the runner still
-    delivers only to targets that never received the batch.
+    forever: a quiet CI day with no pending queue re-pushes nothing, and a
+    recovery after a lost queue still delivers only to targets that have not
+    received the batch.
 
     For entries written before the baseline split it falls back to the
     legacy delivered map's bootstrap markers (which a pre-split pruner
@@ -187,10 +178,8 @@ def baseline_ids(state: dict[str, Any], target: Target) -> set[str]:
 def sent_ids(state: dict[str, Any], target: Target) -> set[str]:
     """Returns arXiv IDs that were *actually sent* to this target.
 
-    Only entries with a non-null ``message_id`` count -- bootstrap markers
-    never do. This is the idempotency set for retrying a partially failed
-    batch: a target that already received a paper (its send succeeded even
-    though another target's failed) must not receive it again.
+    Only entries with a non-null ``message_id`` count. This bounded set is
+    used for reporting; delivery idempotency relies on the complete baseline.
     """
     entry = state["targets"].get(target.id)
     if not isinstance(entry, dict):
@@ -208,11 +197,8 @@ def sent_ids(state: dict[str, Any], target: Target) -> set[str]:
 def delivered_ids(state: dict[str, Any], target: Target) -> set[str]:
     """Returns the *retained* set of arXiv IDs recently delivered to a target.
 
-    Note: with the rolling-window design this set is only the recent slice kept
-    for duplicate-push protection.  Callers should not treat absence from this
-    set as proof that a paper has never been pushed historically; use the
-    ``pending_push.json`` cache as the authoritative "new this round" list
-    instead.
+    This set is only a recent audit slice. Absence does not prove that a paper
+    was never handled; callers must use :func:`baseline_ids` for that decision.
     """
     entry = state["targets"].get(target.id)
     if not isinstance(entry, dict):
@@ -260,10 +246,9 @@ def bootstrap_target(
     every historical ID, or papers older than the rolling window would be
     misjudged as new and mass-pushed on the next cache-less run.
 
-    The ``delivered`` rolling window starts EMPTY at bootstrap: it only ever
-    records *real* sends (entries carry a non-null ``message_id``), so it can
-    drive idempotent retries. Bootstrap marking something as history is not
-    a send and must not suppress a future cache-driven push of the same ID.
+    The ``delivered`` rolling window starts empty at bootstrap because it only
+    records real sends. ``baseline_ids`` remains the authoritative idempotency
+    set for both queued delivery and the full-corpus fallback.
     """
     targets = dict(state["targets"])
     targets[target.id] = {
@@ -296,13 +281,10 @@ def record_delivery(
     """Records one successful delivery for a target and prunes the window.
 
     The ID is admitted into BOTH stores:
-    - ``baseline_ids`` (the seen set): makes the cache-less fallback diff
-      idempotent -- a quiet day or a lost-cache retry must never re-push a
-      paper this target already received. Grows with the corpus, never
-      pruned.
-    - ``delivered`` (the rolling window): short-term retry idempotency for
-      the cache-driven path (:func:`sent_ids`), capped by
-      ``DELIVERED_RETENTION``.
+    - ``baseline_ids`` (the seen set): makes queued sends and fallback diffs
+      idempotent. It grows with the corpus and is never pruned.
+    - ``delivered`` (the rolling window): recent delivery metadata for
+      reporting and diagnostics, capped by ``DELIVERED_RETENTION``.
 
     Legacy entries without a ``baseline_ids`` field get one created here,
     seeded from their bootstrap markers, so old state files self-heal on
@@ -342,4 +324,3 @@ def record_delivery(
     entry["updated_at"] = utc_now_iso()
     targets[target.id] = entry
     return {"version": STATE_VERSION, "targets": targets}
-

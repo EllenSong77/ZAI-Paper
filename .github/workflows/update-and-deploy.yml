@@ -46,7 +46,7 @@ concurrency:
 
 jobs:
   # ───────────────────────────────────────────────────────────────────────────
-  # 1. update — sync arXiv, run tests, commit data, upload Pages artifact.
+  # 1. update — sync arXiv, persist the notification queue, upload Pages.
   # ───────────────────────────────────────────────────────────────────────────
   update:
     runs-on: ubuntu-latest
@@ -83,14 +83,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/zhipu_papers.json
+          queue=.notification-state/pending_push.json
+          if [ -e "$queue" ] || git ls-files --error-unmatch "$queue" >/dev/null 2>&1; then
+            git add -A -- "$queue"
+          fi
           if git diff --cached --quiet; then
             echo "No paper updates."
           else
-            git commit -m "Update arXiv paper data [skip ci]"
+            git commit -m "Update arXiv data and notification queue [skip ci]"
             # Non-destructive push with a couple of retries to absorb a
             # concurrent state-file commit from another dispatcher.
             for attempt in 1 2 3; do
-              git pull --rebase origin "$GITHUB_REF_NAME" || true
+              git pull --rebase origin "$GITHUB_REF_NAME"
               if git push; then
                 break
               fi
@@ -101,22 +105,6 @@ jobs:
               sleep 5
             done
           fi
-
-      # Hand the per-run new-paper cache to the notify job. The notify job
-      # does a fresh checkout, so the pending_push.json written by main.py
-      # on this runner's disk would otherwise never reach it and `send`
-      # would silently fall back to the legacy full-diff branch. On days
-      # with no new papers main.py writes no cache at all, so no artifact
-      # is uploaded; notify's download step then fails harmlessly
-      # (continue-on-error) and send falls back to the idempotent
-      # corpus-minus-seen-set diff, which pushes nothing on such days.
-      - name: Upload pending-push cache
-        uses: actions/upload-artifact@v4
-        with:
-          name: pending-push
-          path: .notification-state/pending_push.json
-          if-no-files-found: ignore
-          retention-days: 7
 
       - uses: actions/configure-pages@v5
 
@@ -215,20 +203,6 @@ jobs:
         if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
         run: pip install -r requirements.txt
 
-      # Restore the per-run new-paper cache uploaded by the update job. The
-      # fresh checkout above does not contain pending_push.json (it is never
-      # committed), so without this download `send` would never see the
-      # cache and would silently fall back to the legacy full-diff branch.
-      - name: Download pending-push cache
-        if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
-        uses: actions/download-artifact@v4
-        with:
-          name: pending-push
-          path: .notification-state
-        continue-on-error: true
-        # A missing artifact (e.g. hand-dispatched notify run without a
-        # preceding update) is not fatal: send falls back to the full diff.
-
       - name: Run notification command
         id: notify_cmd
         if: env.NOTIFICATION_MODE != 'none' && env.NOTIFICATION_MODE != ''
@@ -242,20 +216,23 @@ jobs:
           python -m notifications "${NOTIFICATION_MODE}"
 
       - name: Commit notification state
-        # Bootstrap and send mutate the state file; dry-run and smoke-test do
-        # not. Committing is idempotent when nothing changed, and the [skip ci]
-        # tag plus paths-ignore prevent loops.
+        # Bootstrap and send mutate delivery state. A successful send also
+        # deletes the durable queue, so both paths must be staged.
         if: env.NOTIFICATION_MODE == 'bootstrap' || env.NOTIFICATION_MODE == 'send'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .notification-state/feishu.json
+          for path in .notification-state/feishu.json .notification-state/pending_push.json; do
+            if [ -e "$path" ] || git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
+              git add -A -- "$path"
+            fi
+          done
           if git diff --cached --quiet; then
             echo "No notification-state changes to commit."
           else
             git commit -m "Update Feishu notification state [skip ci]"
             for attempt in 1 2 3; do
-              git pull --rebase origin "$GITHUB_REF_NAME" || true
+              git pull --rebase origin "$GITHUB_REF_NAME"
               if git push; then
                 break
               fi

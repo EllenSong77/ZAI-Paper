@@ -4,15 +4,10 @@ This module is the only place that ties together config, client, cards, and
 state.  Each public command returns a tuple ``(ok, summary)`` where ``ok`` is
 False if any target failed; callers exit with a non-zero status in that case.
 
-Pushed-paper source (revised): ``send`` and ``dry-run`` prefer the
-``pending_push.json`` cache that ``main.py`` writes during incremental syncs.
-That cache contains only the arXiv IDs that were *new* in the upstream run, so
-the notification worker never needs to compare the full papers list against a
-growing delivered-history set.  When the cache is absent (e.g. operator
-clicked "send" before any main.py run, or after a full sync), the worker
-falls back to the legacy "all papers minus recently-delivered" diff against
-the rolling-window ``delivered`` map in state, so freshly bootstrapped
-targets still get caught up correctly.
+``send`` and ``dry-run`` prefer the Git-persisted ``pending_push.json`` queue.
+Incremental syncs append new arXiv IDs to the queue, and it is removed only
+after every target succeeds. When the queue is absent, the worker safely falls
+back to "all papers minus the target's complete baseline".
 
 Author:
     Ellen Song <jiaqi.song@z.ai>
@@ -35,8 +30,8 @@ from .config import Settings, Target, require_credentials
 
 logger = logging.getLogger("notifications")
 
-#: Default location of the per-run new-paper cache.  Lives next to the
-#: notification state so it never reaches the published GitHub Pages output.
+#: Default location of the durable new-paper queue. It lives next to the
+#: notification state, outside the published GitHub Pages output.
 DEFAULT_PENDING_PUSH_PATH = ".notification-state/pending_push.json"
 
 #: Maximum papers per Feishu card. Feishu caps interactive cards at roughly
@@ -47,21 +42,17 @@ CARD_MAX_PAPERS = 20
 
 
 def _pending_push_path(settings: Settings) -> Path:
-    """Returns the pending-push cache path, sibling to the state file."""
+    """Returns the pending-push queue path, sibling to the state file."""
     return settings.state_path.parent / "pending_push.json"
 
 
 def load_pending_push(path: Path) -> list[str] | None:
-    """Loads the per-run new-paper cache.
+    """Loads the durable new-paper queue.
 
-    Returns ``None`` when the cache is absent (upstream has not produced a new
-    batch this round), or when the cache exists but contains no non-empty
-    arxiv_id values -- an all-empty cache is treated as "no new papers this
-    round" rather than "round had zero pending papers", so :func:`run_send`
-    falls back to the legacy full-corpus-minus-delivered diff instead of
-    silently succeeding and deleting the cache.
+    Returns ``None`` when the queue is absent or contains no non-empty arXiv
+    IDs. In that case :func:`run_send` uses its full-corpus fallback.
 
-    An existing but malformed cache raises ``ValueError`` so the operator
+    An existing but malformed queue raises ``ValueError`` so the operator
     notices instead of silently skipping real papers.
     """
     if not path.exists():
@@ -89,7 +80,7 @@ def load_pending_push(path: Path) -> list[str] | None:
 
 
 def discard_pending_push(path: Path) -> None:
-    """Removes the per-run cache after a successful delivery (push-and-forget)."""
+    """Removes the durable queue after every target succeeds."""
     try:
         path.unlink()
     except FileNotFoundError:
@@ -104,14 +95,10 @@ def _select_pending_rows(
 ) -> list[dict[str, Any]]:
     """Resolves the rows to push for a target.
 
-    When ``pending_cache`` is available (incremental upstream run), it is the
-    authoritative list of this round's new papers -- *minus* IDs this target
-    already received with a real ``message_id``. That subtraction is the
-    idempotency guard for retrying a partially failed batch: when target A
-    succeeded and target B failed, the cache is kept for a retry, and without
-    this filter A would receive the whole batch a second time. Bootstrap
-    markers never suppress a cache-driven push (they are not sends), so a
-    freshly bootstrapped target still gets its first real batch.
+    When ``pending_cache`` is available, it is the durable queue of papers
+    awaiting delivery. Subtracting the target's complete baseline makes
+    partial retries idempotent and ensures a newly bootstrapped target does not
+    receive papers that bootstrap already marked as historical.
 
     When the cache is ``None`` (no main.py run yet, a quiet day with no new
     papers, or a hand-dispatched notify), we fall back to "whole corpus
@@ -123,11 +110,11 @@ def _select_pending_rows(
     """
     rows_by_id = _rows_by_id(data)
     if pending_cache is not None:
-        already_sent = state.sent_ids(working_state, target)
+        baseline = state.baseline_ids(working_state, target)
         ordered = [
             arxiv_id
             for arxiv_id in pending_cache
-            if arxiv_id in rows_by_id and arxiv_id not in already_sent
+            if arxiv_id in rows_by_id and arxiv_id not in baseline
         ]
     else:
         baseline = state.baseline_ids(working_state, target)
@@ -219,9 +206,8 @@ def _log_target(level: int, target: Target, msg: str) -> None:
 def run_dry_run(settings: Settings) -> tuple[bool, list[TargetResult]]:
     """Reports pending counts per target without any network or state write.
 
-    Prefers the ``pending_push.json`` cache when present (per-run incremental
-    new-paper list).  Falls back to the legacy full-corpus-minus-delivered
-    diff so the report still works after a bootstrap or full sync.
+    Prefers the durable ``pending_push.json`` queue when present. Falls back
+    to the full-corpus-minus-baseline diff when the queue is absent.
     """
     data = _validate_papers_file(settings.papers_path)
     pending_push_path = _pending_push_path(settings)
@@ -454,11 +440,10 @@ def run_send(
     command exits non-zero and the operator is told how to recover.  This is
     what prevents a fresh ``send`` from silently mass-mailing history.
 
-    Pending-paper source (revised): prefers the per-run ``pending_push.json``
-    cache that ``main.py`` writes.  When all evaluated targets succeed on a
-    cache-driven run, the cache is discarded so the next run does not re-push
-    the same batch.  When the cache is absent the legacy full-corpus-minus-
-    delivered diff is used (still safe for a freshly bootstrapped target).
+    The Git-persisted ``pending_push.json`` queue is preferred. It remains on
+    disk after any target failure and is removed only after all targets
+    succeed. When it is absent, a full-corpus-minus-baseline fallback preserves
+    idempotency.
 
     The ``registrar`` hook (used by the test suite to avoid touching the real
     filesystem) replaces :func:`state.atomic_write_state` when supplied.
@@ -537,7 +522,7 @@ def run_send(
             # Deterministic order, then send in chunks of CARD_MAX_PAPERS.
             # Chunk-level progress is recorded immediately: if chunk 3 of 5
             # fails, chunks 1-2 are already in the state file (and the seen
-            # set), so the retry -- cache-driven or fallback -- delivers
+            # set), so the retry -- queue-driven or fallback -- delivers
             # only the unsent remainder, never a duplicate.
             ordered_rows = sorted(pending_rows, key=_arxiv_id_key)
             for start in range(0, len(ordered_rows), CARD_MAX_PAPERS):
@@ -625,9 +610,8 @@ def run_send(
                 )
             )
 
-    # Push-and-forget: only purge the per-run cache when every evaluated target
-    # succeeded AND we actually used the cache as the source of truth.  A
-    # partial failure keeps the cache so the operator can retry the same batch.
+    # Remove the durable queue only after every target succeeds. The workflow
+    # commits this deletion; a partial failure leaves the queue for a later run.
     if overall_ok and pending_cache is not None:
         discard_pending_push(pending_push_path)
         logger.info("send: discarded pending_push cache after full success")

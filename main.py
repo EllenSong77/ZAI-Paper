@@ -1145,11 +1145,9 @@ def merge_rows(
 ) -> tuple[list[dict], list[str]]:
     """Replaces all rows for full syncs and merges rows for incremental syncs.
 
-    Returns the sorted row list plus the list of arXiv IDs that were *new* in
-    this run (present in ``reviewed_rows`` but not in ``existing_rows``).  The
-    new-ID list is empty for full syncs because every reviewed row is treated
-    as new in that mode -- downstream callers should normally only write the
-    pending-push cache during incremental runs.
+    Returns the sorted row list plus the arXiv IDs added by an incremental
+    run. Full syncs return an empty new-ID list to avoid enqueueing the entire
+    historical corpus.
 
     Incremental syncs defensively preserve a previously backfilled
     ``translated_abstract`` when the freshly reviewed row's copy is empty
@@ -1257,10 +1255,8 @@ def main() -> None:
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    # Pending-push cache consumed by `python -m notifications`.  Only written
-    # for incremental syncs (full syncs treat every paper as "new" and would
-    # flood targets).  Lives next to the notification state so it stays out
-    # of the published GitHub Pages output.
+    # Durable queue consumed by `python -m notifications`. Full syncs append
+    # nothing, avoiding a historical flood while preserving any failed batch.
     write_pending_push(
         pending_path=ROOT / ".notification-state" / "pending_push.json",
         new_ids=new_ids if mode != "full" else [],
@@ -1284,15 +1280,15 @@ def main() -> None:
 def write_pending_push(
     pending_path: Path, new_ids: list[str], papers_path: str
 ) -> None:
-    """Accumulating write of the per-run pending-push cache.
+    """Appends new paper IDs to the durable pending-push queue.
 
     Merges this round's new ids into any cache that is still awaiting
     delivery: a previous round may have kept its batch because some target
     failed, and overwriting the file wholesale would permanently drop that
     undelivered batch once today's papers arrive. The cache is released
     only by the notification worker after EVERY target has been sent to
-    successfully -- until then it only grows, and `send` idempotently skips
-    targets that already received a given id (sent_ids).
+    successfully. Until then it only grows, and ``send`` subtracts each
+    target's complete baseline to avoid duplicates.
 
     An empty ``new_ids`` (quiet day or full sync) leaves an existing cache
     untouched; a malformed/unreadable cache is treated as absent.

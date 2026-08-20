@@ -1223,12 +1223,12 @@ class BackfillParserTests(TestCase):
 
 
 # ---------------------------------------------------------------------------
-# 25-27: revised push architecture (pending_push.json + rolling window)
+# 25-27: durable push queue
 # ---------------------------------------------------------------------------
 
 
 class PendingPushCacheTests(TestCase):
-    """Round-trip + error handling for the per-run new-paper cache."""
+    """Round-trip and validation behavior for the durable pending queue."""
 
     def _cache_path(self) -> Path:
         d = Path(TemporaryDirectory().name)  # removed by temp dir context below
@@ -1343,13 +1343,11 @@ class PendingPushDrivenSendTests(_ServiceTestBase):
         return cache_path
 
     def test_send_uses_cache_when_present_and_deletes_on_success(self):
-        # Bootstrap against the existing papers, then write a cache that names
-        # one of those rows as "new this round". Bootstrap history lives in
-        # the seen set (baseline_ids) and the delivered window starts empty,
-        # so this row is sendable exactly because the cache drives it: the
-        # cache-driven path only subtracts real sends (sent_ids).
+        # Bootstrap the historical corpus before the new paper appears.
+        write_papers(self.tmp_path, sample_rows()[1:])
         service.run_bootstrap(self.settings)
         existing_id = sample_rows()[0]["arxiv_id"]
+        write_papers(self.tmp_path, sample_rows())
         cache_path = self._write_pending([existing_id])
         send_resp = make_response(
             200, {"code": 0, "msg": "ok", "data": {"message_id": "om_x"}}
@@ -1364,8 +1362,10 @@ class PendingPushDrivenSendTests(_ServiceTestBase):
         self.assertFalse(cache_path.exists())
 
     def test_send_keeps_cache_on_partial_failure(self):
+        write_papers(self.tmp_path, sample_rows()[1:])
         service.run_bootstrap(self.settings)
         existing_id = sample_rows()[0]["arxiv_id"]
+        write_papers(self.tmp_path, sample_rows())
         cache_path = self._write_pending([existing_id])
         fail_resp = make_response(200, {"code": 230002, "msg": "bot not in chat"})
         with patch("notifications.service.requests.Session") as session_cls:
@@ -1374,6 +1374,20 @@ class PendingPushDrivenSendTests(_ServiceTestBase):
         self.assertFalse(ok)
         # Failed send must keep the cache so the operator can retry.
         self.assertTrue(cache_path.exists())
+
+    def test_bootstrap_suppresses_papers_already_marked_as_history(self):
+        """A durable queue must not override an explicit bootstrap baseline."""
+        service.run_bootstrap(self.settings)
+        historical_id = sample_rows()[0]["arxiv_id"]
+        cache_path = self._write_pending([historical_id])
+
+        with patch("notifications.service.requests.Session") as session_cls:
+            ok, results = service.run_send(self.settings)
+
+        self.assertTrue(ok)
+        self.assertEqual(results[0].sent_paper_ids, [])
+        session_cls.assert_not_called()
+        self.assertFalse(cache_path.exists())
 
 
 class FallbackDiffTests(_ServiceTestBase):
@@ -1508,6 +1522,7 @@ class ReviewRegressionScenarios(_ServiceTestBase):
         get ZERO cards (its sends are recorded with real message_ids) while
         group-target receives the full batch.
         """
+        write_papers(self.tmp_path, sample_rows()[1:])
         self.settings = build_settings(
             self.tmp_path,
             targets_json=json.dumps(
@@ -1528,6 +1543,7 @@ class ReviewRegressionScenarios(_ServiceTestBase):
             ),
         )
         service.run_bootstrap(self.settings)
+        write_papers(self.tmp_path, sample_rows())
         cache_path = self.settings.state_path.parent / "pending_push.json"
         cache_path.write_text(
             json.dumps({"arxiv_ids": ["2608.00001"]}), encoding="utf-8"
@@ -1600,16 +1616,18 @@ class ReviewRegressionScenarios(_ServiceTestBase):
         """Adversarial-review P1 regression: the fallback diff must be
         idempotent across days.
 
-        Day 1: cache-driven send delivers a new paper (success, cache
-        discarded). Day 2: no new papers -> no cache (CI: no artifact ->
-        download fails -> fallback). The fallback diff must push NOTHING:
+        Day 1: queue-driven send delivers a new paper (success, queue
+        discarded). Day 2: no new papers and no queue. The fallback diff must
+        push NOTHING:
         record_delivery admits the sent id into baseline_ids (the seen
         set), so corpus-minus-seen-set excludes it. Before this fix the
         fallback subtracted only the bootstrap baseline and re-pushed
         every paper ever sent on each quiet day.
         """
+        write_papers(self.tmp_path, sample_rows()[1:])
         service.run_bootstrap(self.settings)
         new_id = sample_rows()[0]["arxiv_id"]
+        write_papers(self.tmp_path, sample_rows())
         cache_path = self.settings.state_path.parent / "pending_push.json"
         cache_path.write_text(
             json.dumps({"arxiv_ids": [new_id]}), encoding="utf-8"
@@ -1772,17 +1790,33 @@ class ReviewRegressionScenarios(_ServiceTestBase):
         """End-to-end accumulation scenario: B fails day 1, cache keeps A's
         undelivered papers; a day-2 cache containing the UNION still
         delivers everything to B exactly once and to A never twice."""
-        # Two targets via targets_json.
+        from main import write_pending_push
+
+        # Two targets share a historical baseline that predates both queued
+        # papers.
+        targets_json = json.dumps(
+            [
+                {
+                    "id": "u",
+                    "name": "u",
+                    "receive_id_type": "open_id",
+                    "receive_id": "ou_1",
+                },
+                {
+                    "id": "g",
+                    "name": "g",
+                    "receive_id_type": "chat_id",
+                    "receive_id": "oc_1",
+                },
+            ]
+        )
+        write_papers(self.tmp_path, sample_rows()[2:])
         settings = build_settings(
             self.tmp_path,
-            targets_json=json.dumps(
-                [
-                    {"id": "u", "name": "u", "receive_id_type": "open_id", "receive_id": "ou_1"},
-                    {"id": "g", "name": "g", "receive_id_type": "chat_id", "receive_id": "oc_1"},
-                ]
-            ),
+            targets_json=targets_json,
         )
         service.run_bootstrap(settings)
+        write_papers(self.tmp_path, sample_rows())
         cache_path = settings.state_path.parent / "pending_push.json"
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         day1_ids = ["2608.00001"]
@@ -1809,19 +1843,34 @@ class ReviewRegressionScenarios(_ServiceTestBase):
             ok1, r1 = service.run_send(settings)
         self.assertFalse(ok1)
 
-        # Day 2: sync accumulates day2 on top of surviving day1 cache.
-        stored = json.loads(cache_path.read_text(encoding="utf-8"))
-        union = sorted(set(stored["arxiv_ids"]) | {"2608.00002"})
-        cache_path.write_text(
-            json.dumps({"arxiv_ids": union}), encoding="utf-8"
-        )
-        # Day 2: both targets succeed.
-        with patch("notifications.service.requests.Session") as cls:
-            fake = MagicMock()
-            fake.post.side_effect = [tok(), resp("om_u2"), tok(), resp("om_g2")]
-            fake.__enter__.return_value = fake; fake.__exit__.return_value = False
-            cls.return_value = fake
-            ok2, r2 = service.run_send(settings)
+        # Day 2 starts in a fresh checkout. Git has persisted both the failed
+        # queue and the successful target's state; the next sync appends B.
+        with TemporaryDirectory() as day2_tmp:
+            day2_root = Path(day2_tmp)
+            write_papers(day2_root, sample_rows())
+            day2_settings = build_settings(day2_root, targets_json=targets_json)
+            day2_settings.state_path.write_text(
+                settings.state_path.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            day2_cache = day2_settings.state_path.parent / "pending_push.json"
+            day2_cache.write_text(
+                cache_path.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            write_pending_push(
+                day2_cache, ["2608.00002"], str(day2_settings.papers_path)
+            )
+
+            with patch("notifications.service.requests.Session") as cls:
+                fake = MagicMock()
+                fake.post.side_effect = [
+                    tok(), resp("om_u2"), tok(), resp("om_g2")
+                ]
+                fake.__enter__.return_value = fake
+                fake.__exit__.return_value = False
+                cls.return_value = fake
+                ok2, r2 = service.run_send(day2_settings)
+
+            self.assertFalse(day2_cache.exists())
         self.assertTrue(ok2)
         by_id = {x.target.id: x for x in r2}
         self.assertEqual(
@@ -1833,7 +1882,10 @@ class ReviewRegressionScenarios(_ServiceTestBase):
             "g missed day 1 entirely; the accumulated union catches it up "
             "with no loss and no duplicate",
         )
-        self.assertFalse(cache_path.exists())
+        self.assertTrue(
+            cache_path.exists(),
+            "the old checkout is unchanged; the fresh checkout clears its copy",
+        )
 
     def test_large_batch_is_sent_in_chunks(self):
         """45 pending papers must be split into ceil(45/20)=3 cards, all
@@ -1850,10 +1902,11 @@ class ReviewRegressionScenarios(_ServiceTestBase):
             }
             for i in range(45)
         ]
-        write_papers(self.tmp_path, rows)
+        write_papers(self.tmp_path, [])
         self.settings = build_settings(self.tmp_path)
         service.run_bootstrap(self.settings)
-        # Add all 45 as "new" via cache.
+        write_papers(self.tmp_path, rows)
+        # Add all 45 after bootstrap and queue them for delivery.
         cache_path = self.settings.state_path.parent / "pending_push.json"
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(
@@ -1892,6 +1945,33 @@ class ReviewRegressionScenarios(_ServiceTestBase):
         )
         self.assertEqual(results[0].delivered, 45)
         self.assertFalse(cache_path.exists())
+
+
+class WorkflowPersistenceTests(TestCase):
+    """Guards the Actions handoff that makes the notification queue durable."""
+
+    def test_workflow_persists_queue_across_jobs_and_failures(self):
+        workflow = (ROOT / ".github/workflows/update-and-deploy.yml").read_text(
+            encoding="utf-8"
+        )
+        ignored_paths = {
+            line.strip()
+            for line in (ROOT / ".gitignore").read_text(
+                encoding="utf-8"
+            ).splitlines()
+        }
+
+        self.assertIn("queue=.notification-state/pending_push.json", workflow)
+        self.assertIn('git add -A -- "$queue"', workflow)
+        self.assertIn("ref: ${{ github.ref_name }}", workflow)
+        self.assertIn('git pull --ff-only origin "$GITHUB_REF_NAME"', workflow)
+        self.assertIn(
+            ".notification-state/feishu.json .notification-state/pending_push.json",
+            workflow,
+        )
+        self.assertNotIn("uses: actions/upload-artifact@", workflow)
+        self.assertNotIn("uses: actions/download-artifact@", workflow)
+        self.assertNotIn(".notification-state/pending_push.json", ignored_paths)
 
 
 if __name__ == "__main__":  # pragma: no cover
