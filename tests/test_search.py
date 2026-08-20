@@ -552,7 +552,7 @@ class RuleTests(TestCase):
                 "translated_abstract": "",
             }
         ]
-        rows = merge_rows("incremental", existing, reviewed)
+        rows, _new_ids = merge_rows("incremental", existing, reviewed)
         self.assertEqual(rows[0]["translated_abstract"], "已回填的中文摘要。")
 
     def test_full_sync_replaces_abstract_without_preserving(self) -> None:
@@ -573,7 +573,7 @@ class RuleTests(TestCase):
                 "translated_abstract": "",
             }
         ]
-        rows = merge_rows("full", existing, reviewed)
+        rows, _new_ids = merge_rows("full", existing, reviewed)
         self.assertEqual(rows[0]["translated_abstract"], "")
 
     def test_incremental_merge_accepts_fresh_translation(self) -> None:
@@ -592,5 +592,44 @@ class RuleTests(TestCase):
                 "translated_abstract": "新的完整翻译。",
             }
         ]
-        rows = merge_rows("incremental", existing, reviewed)
+        rows, _new_ids = merge_rows("incremental", existing, reviewed)
         self.assertEqual(rows[0]["translated_abstract"], "新的完整翻译。")
+    def test_load_existing_state_preserves_translated_abstract(self) -> None:
+        """JSON round-trip regression: PR #3's output schema added
+        translated_abstract but this loader's whitelist initially omitted
+        it, so every CI sync silently stripped the stored translations
+        while loading (the merge_rows preserve-guard then had nothing to
+        preserve). The field must survive load_existing_state."""
+        import json as _json
+        from pathlib import Path as _Path
+        from tempfile import TemporaryDirectory as _TD
+
+        from main import load_existing_state
+
+        row = {
+            "arxiv_id": "2608.00001",
+            "title": "T",
+            "authors": "A",
+            "translated_title": "题",
+            "translated_abstract": "这是中文摘要。",
+            "tag": "产品相关",
+            "topic_tags": ["文本", "模型"],
+            "institutions": ["Z.AI"],
+            "abstract": "abs",
+            "metadata_enriched": True,
+            "published": "2026-08-01",
+            "pdf_url": "p",
+            "arxiv_url": "a",
+        }
+        with _TD() as tmp:
+            path = _Path(tmp) / "papers.json"
+            path.write_text(
+                _json.dumps({"rows": [row]}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            rows, _papers = load_existing_state(path)
+        self.assertEqual(
+            rows["2608.00001"].get("translated_abstract"),
+            "这是中文摘要。",
+            "translated_abstract must survive the load round-trip",
+        )

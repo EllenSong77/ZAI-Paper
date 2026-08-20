@@ -425,6 +425,15 @@ def load_existing_state(
             "translated_title": str(
                 source.get("translated_title", "")
             ).strip(),
+            # Survives the JSON round-trip. PR #3 added this field to the
+            # output schema but initially omitted it from this whitelist:
+            # every CI sync then stripped the stored translations while
+            # loading, silently blanking them on the first incremental run
+            # after merge (merge_rows' preserve-guard never saw a value to
+            # preserve). Keep in sync with row_from_candidate's schema.
+            "translated_abstract": clean(
+                str(source.get("translated_abstract", ""))
+            ),
             "tag": normalize_tag(source.get("tag"), "非产品相关"),
             "topic_tags": normalize_topic_tags(source.get("topic_tags")),
             "institutions": normalize_institutions(source.get("institutions")),
