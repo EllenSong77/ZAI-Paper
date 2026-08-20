@@ -425,6 +425,15 @@ def load_existing_state(
             "translated_title": str(
                 source.get("translated_title", "")
             ).strip(),
+            # Survives the JSON round-trip. PR #3 added this field to the
+            # output schema but initially omitted it from this whitelist:
+            # every CI sync then stripped the stored translations while
+            # loading, silently blanking them on the first incremental run
+            # after merge (merge_rows' preserve-guard never saw a value to
+            # preserve). Keep in sync with row_from_candidate's schema.
+            "translated_abstract": clean(
+                str(source.get("translated_abstract", ""))
+            ),
             "tag": normalize_tag(source.get("tag"), "非产品相关"),
             "topic_tags": normalize_topic_tags(source.get("topic_tags")),
             "institutions": normalize_institutions(source.get("institutions")),
@@ -1133,8 +1142,14 @@ def approved_rows(
 
 def merge_rows(
     mode: str, existing_rows: dict[str, dict], reviewed_rows: list[dict]
-) -> list[dict]:
+) -> tuple[list[dict], list[str]]:
     """Replaces all rows for full syncs and merges rows for incremental syncs.
+
+    Returns the sorted row list plus the list of arXiv IDs that were *new* in
+    this run (present in ``reviewed_rows`` but not in ``existing_rows``).  The
+    new-ID list is empty for full syncs because every reviewed row is treated
+    as new in that mode -- downstream callers should normally only write the
+    pending-push cache during incremental runs.
 
     Incremental syncs defensively preserve a previously backfilled
     ``translated_abstract`` when the freshly reviewed row's copy is empty
@@ -1145,9 +1160,13 @@ def merge_rows(
     rows_by_id = {} if mode == "full" else dict(existing_rows)
     for arxiv_id in EXCLUDED_ARXIV_IDS:
         rows_by_id.pop(arxiv_id, None)
+    new_ids: list[str] = []
     for row in reviewed_rows:
-        previous = rows_by_id.get(row["arxiv_id"], {})
-        if mode != "full" and previous.get("institutions") and not row.get(
+        arxiv_id = row["arxiv_id"]
+        previous = rows_by_id.get(arxiv_id, {})
+        if previous == {} and mode != "full":
+            new_ids.append(arxiv_id)
+        elif mode != "full" and previous.get("institutions") and not row.get(
             "institutions"
         ):
             row = {**row, "institutions": previous["institutions"]}
@@ -1157,10 +1176,10 @@ def merge_rows(
             and not row.get("translated_abstract")
         ):
             row = {**row, "translated_abstract": previous["translated_abstract"]}
-        rows_by_id[row["arxiv_id"]] = row
+        rows_by_id[arxiv_id] = row
     rows = list(rows_by_id.values())
     rows.sort(key=lambda row: row.get("published", ""), reverse=True)
-    return rows
+    return rows, new_ids
 
 
 def main() -> None:
@@ -1218,7 +1237,7 @@ def main() -> None:
         os.getenv("ZHIPU_CLASSIFIER_MODEL", "glm-5-turbo").strip(),
     )
     reviewed_rows = approved_rows(candidates, reviews, fetched_papers)
-    rows = merge_rows(mode, existing_rows, reviewed_rows)
+    rows, new_ids = merge_rows(mode, existing_rows, reviewed_rows)
 
     summary = {
         "updated_at": datetime.now().astimezone().isoformat(),
@@ -1230,11 +1249,22 @@ def main() -> None:
         "academic_output": sum(
             1 for row in rows if row["tag"] == "非产品相关"
         ),
+        "new_papers": len(new_ids),
     }
     result = {"summary": summary, "rows": rows}
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # Pending-push cache consumed by `python -m notifications`.  Only written
+    # for incremental syncs (full syncs treat every paper as "new" and would
+    # flood targets).  Lives next to the notification state so it stays out
+    # of the published GitHub Pages output.
+    write_pending_push(
+        pending_path=ROOT / ".notification-state" / "pending_push.json",
+        new_ids=new_ids if mode != "full" else [],
+        papers_path=str(output.relative_to(ROOT)),
     )
     print(
         json.dumps(
@@ -1248,6 +1278,61 @@ def main() -> None:
             },
             ensure_ascii=False,
         )
+    )
+
+
+def write_pending_push(
+    pending_path: Path, new_ids: list[str], papers_path: str
+) -> None:
+    """Accumulating write of the per-run pending-push cache.
+
+    Merges this round's new ids into any cache that is still awaiting
+    delivery: a previous round may have kept its batch because some target
+    failed, and overwriting the file wholesale would permanently drop that
+    undelivered batch once today's papers arrive. The cache is released
+    only by the notification worker after EVERY target has been sent to
+    successfully -- until then it only grows, and `send` idempotently skips
+    targets that already received a given id (sent_ids).
+
+    An empty ``new_ids`` (quiet day or full sync) leaves an existing cache
+    untouched; a malformed/unreadable cache is treated as absent.
+    """
+    if not new_ids:
+        return
+    accumulated: list[str] = list(new_ids)
+    if pending_path.exists():
+        try:
+            previous = json.loads(
+                pending_path.read_text(encoding="utf-8")
+            )
+            previous_ids = previous.get("arxiv_ids") if isinstance(
+                previous, dict
+            ) else None
+            if isinstance(previous_ids, list):
+                seen_ids = set(accumulated)
+                for raw in previous_ids:
+                    arxiv_id = str(raw).strip()
+                    if arxiv_id and arxiv_id not in seen_ids:
+                        seen_ids.add(arxiv_id)
+                        accumulated.append(arxiv_id)
+            # A malformed cache (not a dict / no list) is treated as
+            # absent: today's batch wins, matching how the notification
+            # worker tolerates a corrupt cache.
+        except (OSError, json.JSONDecodeError):
+            pass  # unreadable cache -> start fresh with today's batch
+    pending_path.parent.mkdir(parents=True, exist_ok=True)
+    pending_path.write_text(
+        json.dumps(
+            {
+                "arxiv_ids": accumulated,
+                "produced_at": datetime.now(timezone.utc)
+                .strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "papers_path": papers_path,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
     )
 
 
