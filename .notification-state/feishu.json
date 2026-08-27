@@ -209,12 +209,19 @@
         "2607.25380",
         "2608.01460",
         "2608.07641",
-        "2608.10402"
+        "2608.10402",
+        "2608.25618"
       ],
       "bootstrapped": true,
-      "delivered": {},
+      "delivered": {
+        "2608.25618": {
+          "delivered_at": "2026-08-27T10:43:02Z",
+          "message_id": "om_x100b6635059314bcc23667611c77106",
+          "seq": 1
+        }
+      },
       "target_fingerprint": "bffdda1af3704bd8a537f328fd0c548a4d4ce356caececf7a48364463dc0343d",
-      "updated_at": "2026-08-25T06:15:29Z"
+      "updated_at": "2026-08-27T10:43:02Z"
     }
   },
   "version": 1
