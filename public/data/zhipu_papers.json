@@ -1,24 +1,25 @@
 {
   "summary": {
-    "updated_at": "2026-09-03T05:15:32.861381+00:00",
+    "updated_at": "2026-09-04T05:11:20.721546+00:00",
     "final_count": 210,
     "product_related": 30,
     "product_support": 18,
     "academic_output": 162,
-    "new_papers": 1
+    "new_papers": 0
   },
   "rows": [
     {
       "arxiv_id": "2609.02702",
       "title": "Trace as State: Reasoning Traces as Conditional States for Long-Context Transformers",
       "authors": "Xu Zou, Jie Tang",
-      "translated_title": "推理轨迹作为状态：将推理轨迹作为长上下文 Transformer 的条件状态",
-      "translated_abstract": "Transformer 以因果方式处理信息，但长上下文推理可能依赖于仅在后续才发现的任务状态。我们通过条件状态更新任务形式化了这一不匹配问题。对于因果状态更新处理器，先提供条件在最坏情况下可能比最后提供条件所需的内存呈指数级减少。受此原理启发，我们提出了“推理轨迹作为状态”（Trace as State）。我们将收集的推理轨迹作为任务状态的文本代理，并将其放置在全新一轮处理的长上下文块之前，从而允许先前推导出的信息指导重新阅读。我们在“推理轨迹作为状态”和“推理轨迹附加”（Trace Append）上进行了大量实验，后者是一个匹配的对照组，使用相同的任务状态代理，但将其置于上下文之后。在三个模型和三个长上下文数据集上，“推理轨迹作为状态”在模型、任务和指标的 27 种报告组合中，有 26 种优于“推理轨迹附加”。在 GraphWalks Parents 任务上，精确匹配率将 DeepSeek V4 Pro Preview 从初始轮次的 29.2% 和使用“推理轨迹附加”的 43.0% 提升至使用“推理轨迹作为状态”的 81.8%，并将 GLM-5.2 从 66.4% 和 83.2% 提升至 100.0%。这些结果表明，将轨迹置于上下文之前可以改善长上下文推理，同时保留因果 Transformer 结构。",
+      "translated_title": "作为状态的轨迹：将推理轨迹作为长上下文 Transformer 的条件状态",
+      "translated_abstract": "Transformer 以因果方式处理信息，但长上下文推理可能依赖于稍后才发现的任务状态。我们通过条件状态更新任务形式化了这种不匹配。对于因果状态更新处理器，先提供条件在最坏情况下所需的内存可能比最后提供条件呈指数级减少。受此原理启发，我们引入了“作为状态的轨迹”（Trace as State）。我们将收集到的推理轨迹作为任务状态的文本代理，并将其放置在全新一轮处理的长上下文块之前，从而允许先前推导出的信息来指导重新阅读。我们在“作为状态的轨迹”和“轨迹追加”（Trace Append）上进行了大量实验，后者是一个匹配的对照组，使用相同的任务状态代理，但将其放在上下文之后。在三个模型和三个长上下文数据集上，“作为状态的轨迹”在模型、任务和指标的 27 个报告组合中有 26 个优于“轨迹追加”。在 GraphWalks Parents 任务上，精确匹配率将 DeepSeek V4 Pro Preview 从初始轮的 29.2% 和使用“轨迹追加”的 43.0% 提升至使用“作为状态的轨迹”的 81.8%，并将 GLM-5.2 从 66.4% 和 83.2% 提升至 100.0%。这些结果表明，将轨迹放置在上下文之前可以改善长上下文推理，同时保留因果 Transformer 结构。",
       "tag": "产品技术支持",
       "topic_tags": [
         "文本",
         "推理",
-        "模型"
+        "模型",
+        "预训练"
       ],
       "institutions": [],
       "abstract": "Transformers process information causally, but long-context reasoning may depend on task state discovered only later. We formalize this mismatch through conditional state update tasks. For causal state update processors, providing the condition first can require exponentially less memory in the worst case than providing it last. Motivated by this principle, we introduce Trace as State. We use collected reasoning traces as a textual proxy for task state and place it before the long-context block on a fresh pass, allowing information derived previously to guide rereading. We conduct extensive experiments on Trace as State and Trace Append, a matched control that uses the same task state proxy but put it after the context. Across three models and three long-context datasets, Trace as State outperforms Trace Append in 26 of 27 reported combinations of model, task, and metric. On GraphWalks Parents, exact match lifts DeepSeek V4 Pro Preview from 29.2% on the initial pass and 43.0% with Trace Appendto 81.8% with Trace as State, and from 66.4% and 83.2% to 100.0% for GLM-5.2. These results show that placing traces before the context can improve long-context reasoning while retaining the causal transformer structure.",
