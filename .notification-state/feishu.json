@@ -211,7 +211,8 @@
         "2608.07641",
         "2608.10402",
         "2608.25618",
-        "2609.02702"
+        "2609.02702",
+        "2609.07282"
       ],
       "bootstrapped": true,
       "delivered": {
@@ -224,10 +225,15 @@
           "delivered_at": "2026-09-03T05:16:05Z",
           "message_id": "om_x100b66a4679db8a4c2bf877e7454661",
           "seq": 2
+        },
+        "2609.07282": {
+          "delivered_at": "2026-09-09T05:27:45Z",
+          "message_id": "om_x100b653aabde68a8c3efe0bb1e6ed6d",
+          "seq": 3
         }
       },
       "target_fingerprint": "bffdda1af3704bd8a537f328fd0c548a4d4ce356caececf7a48364463dc0343d",
-      "updated_at": "2026-09-03T05:16:05Z"
+      "updated_at": "2026-09-09T05:27:45Z"
     }
   },
   "version": 1
