@@ -1,26 +1,25 @@
 {
   "summary": {
-    "updated_at": "2026-09-09T05:27:17.446670+00:00",
+    "updated_at": "2026-09-10T05:24:40.648674+00:00",
     "final_count": 211,
     "product_related": 30,
     "product_support": 18,
     "academic_output": 163,
-    "new_papers": 1
+    "new_papers": 0
   },
   "rows": [
     {
       "arxiv_id": "2609.07282",
       "title": "Separating Stream Stability from Long-Term Recall in Language Models",
       "authors": "Peipei Cao, Xin Zhang, Jie Tang, Xiao Li, Siying Li, Qing Pei",
-      "translated_title": "语言模型中流式稳定性与长期召回的分离",
-      "translated_abstract": "流式语言模型的方法通常与长上下文和记忆系统一起讨论，尽管它们解决的是不同的问题。注意力槽可以在无限长的流上稳定自回归生成，而模型仍然无法使用已离开其近期 token 缓存的内容。我们认为这种区别应该在系统声明和评估中明确。我们引入了三个视界：稳定性视界，在其上预测行为保持良好；访问视界，在其上过去内容仍然可以因果地影响输出；以及效用视界，在其上任务保持可接受的性能。我们构造性地表明，稳定性视界可以是无限的，而访问和效用视界是有限的。然后我们提出了 ThreeH，这是一种在共同状态和计算预算下测量所有三个视界的评估契约。将该框架应用于注意力槽流式传输，阐明了其优势，即恒定内存、稳定生成，而无需将锚定 token 视为语义记忆。该框架揭示了缓存策略、循环状态、检索和外部记忆的作用。在 128K-token 流、延迟绑定召回和延迟决策上的实验表明，注意力槽保留了局部建模，但不保留活动缓存之外的内容；循环和检索状态扩展了语义视界。",
+      "translated_title": "区分语言模型中的流式稳定性与长期记忆",
+      "translated_abstract": "流式语言模型的方法经常与长上下文和记忆系统一起讨论，尽管它们解决的是不同的问题。注意力槽可以在无限长的流上稳定自回归生成，而模型仍然无法使用已离开其近期 token 缓存的内容。我们认为这种区别应该在系统声明和评估中明确。我们引入了三个视界：稳定性视界，在其范围内预测行为保持良好；访问视界，在其范围内过去内容仍然可以因果地影响输出；以及效用视界，在其范围内任务保持可接受的性能。我们构造性地表明，稳定性视界可以是无限的，而访问和效用视界是有限的。然后我们提出了 ThreeH，这是一种在共同状态和计算预算下测量所有三个视界的评估契约。将该框架应用于注意力槽流式生成，阐明了其优势，即恒定内存、稳定生成，而无需将锚 token 视为语义记忆。该框架揭示了缓存策略、循环状态、检索和外部记忆的作用。在 128K token 流、延迟绑定召回和延迟决策上的实验表明，注意力槽保留了局部建模，但不保留活动缓存之外的内容；循环和检索状态扩展了语义视界。",
       "tag": "非产品相关",
       "topic_tags": [
         "文本",
         "模型",
         "推理",
-        "评测",
-        "检索"
+        "评测"
       ],
       "institutions": [],
       "abstract": "Methods for streaming language models are often discussed alongside long-context and memory systems, although they solve different problems. An attention sink can stabilize autoregressive generation over an indefinitely long stream while the model remains unable to use content that has left its recent-token cache. We argue that this distinction should be explicit in system claims and evaluation. We introduce three horizons: the stability horizon, over which predictive behavior remains well behaved; the access horizon, over which past content can still causally affect the output; and the utility horizon, over which a task retains acceptable performance. We show constructively that the stability horizon can be infinite while the access and utility horizons are finite. We then propose ThreeH, an evaluation contract that measures all three horizons under a common state and compute budget. Applying the framework to attention-sink streaming clarifies its strength, constant-memory, stable generation, without treating anchor tokens as semantic memory. The framework exposes roles for cache policies, recurrent state, retrieval, and external memory. Experiments on 128K-token streams, delayed binding recall, and delayed decisions show that attention sinks preserve local modeling but not content beyond the active cache; recurrent and retrieval state extend the semantic horizon.",
