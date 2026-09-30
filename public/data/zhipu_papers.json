@@ -1,11 +1,11 @@
 {
   "summary": {
-    "updated_at": "2026-09-29T06:20:02.450071+00:00",
+    "updated_at": "2026-09-30T06:05:34.304721+00:00",
     "final_count": 213,
     "product_related": 30,
     "product_support": 18,
     "academic_output": 165,
-    "new_papers": 1
+    "new_papers": 0
   },
   "rows": [
     {
@@ -13,13 +13,13 @@
       "title": "From Anomalies to Failures: Constructing Causal Error Graphs for Agentic Trace Diagnosis",
       "authors": "Shu-Xun Yang, Yidong Wang, Zhuoer Feng, Bosi Wen, Jiayi Gui, Dayong Yang, Wenbo Yu, Haoke Zhang, Jie Tang, Cunxiang Wang",
       "translated_title": "从异常到失败：构建用于智能体轨迹诊断的因果错误图",
-      "translated_abstract": "LLM 驱动的智能体正日益广泛地部署于复杂应用中，冗长的智能体轨迹使得失败难以诊断。现有的轨迹诊断方法常将异常、错误和失败混为一谈，导致诊断目标模糊；同时，它们缺乏对因果相关错误如何传播并放大为最终任务失败的结构化建模，造成失败归因不可靠。为解决这些问题，我们提出了 CEG-Agent，一个工具增强的智能体框架，用于智能体轨迹的因果诊断。具体而言，CEG-Agent 引入了异常、错误和失败的显式分类法，并构建了因果错误图，这是一种统一的类型化表示，通过因果关系将执行事件、诊断节点和失败结果联系起来。为了评估因果轨迹诊断，我们进一步构建了 CEG-Bench，这是一个完全由智能体标注的基准，其标注通过对抗性智能体裁决协议获得，具有高置信度且源自共识。我们将所得标注与专家精心构建的人类黄金标准集进行了验证，结果显示自动标注与人类标注高度一致。在 CEG-Bench 上的实验表明，CEG-Agent 在语义宽松和结构精确的评估标准下均取得了最先进的性能。我们的代码已公开发布。",
+      "translated_abstract": "由 LLM 驱动的智能体越来越多地部署在复杂应用中，其中冗长的智能体轨迹使得故障难以诊断。现有的轨迹诊断方法经常将异常、错误和失败混为一谈，导致诊断目标不明确；它们也缺乏对因果相关错误如何传播并放大为最终任务失败的结构化建模，导致故障归因不可靠。为了解决这些问题，我们提出了 CEG-Agent，一个工具增强的智能体框架，用于对智能体轨迹进行因果诊断。具体而言，CEG-Agent 引入了异常、错误和失败的显式分类法，并构建了因果错误图，这是一种统一的类型化表示，通过因果关系将执行事件、诊断节点和失败结果联系起来。为了评估因果轨迹诊断，我们进一步构建了 CEG-Bench，这是一个完全由智能体标注的基准测试，包含通过对抗性智能体裁决协议获得的高置信度、共识衍生的 CEG 标注。我们根据专家策划的人类黄金标准集验证了生成的标注，结果显示与自动标注高度一致。在 CEG-Bench 上的实验表明，CEG-Agent 在语义宽松和结构精确的评估标准下均实现了最先进的性能。我们的代码已公开。",
       "tag": "非产品相关",
       "topic_tags": [
         "智能体",
         "推理",
-        "评测",
-        "Benchmark"
+        "Benchmark",
+        "评测"
       ],
       "institutions": [],
       "abstract": "LLM-driven agents are increasingly deployed in complex applications, where long agentic traces make failures difficult to diagnose. Existing trace diagnosis methods often conflate anomalies, errors, and failures, making diagnostic targets ambiguous; they also lack structured modeling of how causally relevant errors propagate and amplify into final task failures, resulting in unreliable failure attribution. To address these problems, we propose CEG-Agent, a tool-augmented agentic framework for causal diagnosis of agentic traces. Specifically, CEG-Agent introduces an explicit taxonomy of anomalies, errors, and failures, and constructs Causal Error Graphs (CEGs), a unified typed representation that links execution events, diagnostic nodes, and failure outcomes through causal relations. To evaluate causal trace diagnosis, we further construct CEG-Bench, a fully agent-annotated benchmark with high-confidence, consensus-derived CEG annotations obtained through an Adversarial Agentic Adjudication Protocol (AAAP). We validate the resulting annotations against an expert-curated human gold set, which shows close agreement with the automatic annotations. Experiments on CEG-Bench demonstrate that CEG-Agent achieves state-of-the-art performance under both semantically relaxed and structurally exact evaluation criteria. Our code is publicly available.",
