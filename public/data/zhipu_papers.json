@@ -1,13 +1,52 @@
 {
   "summary": {
-    "updated_at": "2026-09-30T06:05:34.304721+00:00",
-    "final_count": 213,
+    "updated_at": "2026-10-01T06:38:45.191547+00:00",
+    "final_count": 215,
     "product_related": 30,
     "product_support": 18,
-    "academic_output": 165,
-    "new_papers": 0
+    "academic_output": 167,
+    "new_papers": 2
   },
   "rows": [
+    {
+      "arxiv_id": "2609.39903",
+      "title": "OSWorld-Science: A Benchmark of Computer Use Agents for Learning and Using Scientific Software",
+      "authors": "Dingyuan Dai, Heli Qi, Lei Liu, Yinxi Li, Baiding Chen, Zijun Dou, Qingcheng Zeng, Qi Kang, Oliver Sun, Eric Wang, Bo Zhou, Haixin Wang, Yufan Du, Shi Bo, Ruihan Lin, Mengqi Yuan, Dunjie Lu, Steven Dillmann, Yiming Shi, Tina Su, Amy Xin, Minghao Liu, Xi Wang, Xu Huang, Ge Zhang, Pengyu Nie, Zhen Yang, Jie Tang, Juanzi Li, Weihao Xuan, Tianyu Liu",
+      "translated_title": "OSWorld-Science：用于学习和使用科学软件的计算机使用智能体基准测试",
+      "translated_abstract": "科学软件对基于视觉语言模型（VLMs）的计算机使用智能体提出了严峻的挑战：完成一个研究工作流需要解读专业界面、操作科学对象并产生可验证的结果。因此，我们引入了 OSWorld-Science，这是一个结合了具有科学意义的任务、基于产物的评估以及高效智能体框架的基准测试和评估环境，用于研究科学领域的计算机使用。该基准测试包含 12 个 VLMs 和跨越多个科学领域及软件配置的 146 项高质量任务，涵盖了分子绘制与逆合成、病理图像分析、统计计算和物理模拟等工作流。任务通过专家提案和迭代的人机协同设计开发，并以科学价值和难度为指导进行筛选。特定任务的基于执行的评估器会检查应用状态和生成的产物，包括分子结构、分割掩码、图表和数值结果，并对不完整的结果给予部分分数。我们的专用框架集成了模型适配器、交互循环控制和轨迹记录，以支持对模型和交互策略的比较。我们的结果表明，当前最先进的 VLMs 在配备强大框架的情况下，在解决科学领域的关键问题时仍面临挑战。我们还分析了跨多语言、推理努力、上下文长度等因素的基准测试结果，并得出了几个重要结论和方向，以协助未来的发展。总体而言，我们提供了一个将专家定义的科学目标与可验证的软件结果相连接的集成框架，能够对科学工作流中的智能体能力和框架设计进行系统评估。",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "智能体",
+        "Benchmark",
+        "多模态",
+        "评测"
+      ],
+      "institutions": [],
+      "abstract": "Scientific software presents a demanding test for computer-using agents based on visual language models (VLMs): completing a research workflow requires interpreting specialized interfaces, manipulating scientific objects, and producing verifiable results. We thus introduce OSWorld-Science, a benchmark and evaluation environment that combines scientifically meaningful tasks, artifact-based evaluation, and an efficient agent harness for studying computer use in the scientific domain. The benchmark contains 12 VLMs and 146 high-quality tasks across several scientific domains and software configurations, covering workflows such as molecular drawing and retrosynthesis, pathology image analysis, statistical computing, and physical simulation. Tasks are developed through expert proposals and iterative human--AI co-design, with selection guided by scientific value and difficulty. Task-specific execution-based evaluators inspect application states and generated artifacts, including molecular structures, segmentation masks, plots, and numerical results, and award partial credit for incomplete outcomes. Our special harness integrates model adapters, interaction-loop control, and trajectory logging to support comparisons of models and interaction strategies. Our results show that current state-of-the-art VLMs with a strong harness still face challenges in addressing key questions in the scientific domains. We also analyze the benchmarking results across multi-linguistics, reasoning efforts, context length and other factors and derive several important conclusions and directions to assist future development. Overall, we provide an integrated framework connecting expert-defined scientific goals to verifiable software outcomes, enabling systematic evaluation of both agent capabilities and harness design in scientific workflows.",
+      "metadata_enriched": true,
+      "published": "2026-09-30",
+      "pdf_url": "https://arxiv.org/pdf/2609.39903v1",
+      "arxiv_url": "https://arxiv.org/abs/2609.39903v1"
+    },
+    {
+      "arxiv_id": "2609.39692",
+      "title": "GFD-OPD: Guidance-Folded On-Policy Distillation of Diffusion Models Across Scales",
+      "authors": "Zhenxing Zhang, Jiayan Teng, Wenxu Wu, Zhuoyi Yang, Jiazheng Xu, Wendi Zheng, Jie Tang, Dan Guo, Meng Wang",
+      "translated_title": "GFD-OPD：跨尺度扩散模型的引导折叠在线策略蒸馏",
+      "translated_abstract": "在线策略蒸馏（OPD）在语言模型中展示了两项重要能力：将大型教师模型压缩为较小的学生模型，以及将专家模型合并为单一模型。然而，现有的扩散模型 OPD 大多关注后者，即教师和学生共享相同的骨干网络和规模。我们研究了从大型教师模型到小型学生模型的大到小扩散 OPD，并发现标准方案会失败。为了寻找根本原因，我们提出了 Fixed-State KL，这是一种有效且公平的方法，用于测量扩散模型 OPD 训练期间学生和教师之间的分布差距。我们首次阐明了为什么大到小的 OPD 对扩散模型具有挑战性：较小的学生模型难以完美匹配较大教师模型的分布，而无分类器引导可能会累积并放大学生条件分支和无条件分支与教师之间的分布差异。为了解决这个问题，我们提出了 GFD-OPD，这是一种简单而有效的方法，可以缩小学生与教师之间的差距，同时避免 CFG 组合的误差放大。在大量实验中，GFD 在训练效率和最终性能上均优于之前的基线，在所有基准测试上取得了最先进的结果。",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "生成",
+        "蒸馏",
+        "模型"
+      ],
+      "institutions": [],
+      "abstract": "On-policy distillation (OPD) has demonstrated two important capabilities in language models: compressing large teachers into smaller students and merging expert models into a single model. Existing diffusion OPD, however, mostly focus on the latter, with teachers and students sharing the same backbone and scale. We investigate large-to-small diffusion opd from large teachers to a small student and find that the standard recipe fails. To find the underlying cause, we propose Fixed-State KL, an effective and fair way to measure the distribution gap between student and teacher during OPD training for diffusion models. We are the first to clarify why large-to-small OPD is challenging for diffusion models: a smaller student struggles to perfectly match the distribution of a larger teacher, while classifier-free guidance can accumulate and amplify the distributional discrepancies between the student's conditional and unconditional branches and those of the teacher. To solve this problem, we propose GFD-OPD, a simple yet effective method that reduces the student-teacher gap while avoiding the error amplification of the CFG composition. Across numerous experiments, GFD outperforms previous baselines in both training efficiency and final performance, achieving state-of-the-art results on all benchmarks.",
+      "metadata_enriched": true,
+      "published": "2026-09-30",
+      "pdf_url": "https://arxiv.org/pdf/2609.39692v1",
+      "arxiv_url": "https://arxiv.org/abs/2609.39692v1"
+    },
     {
       "arxiv_id": "2609.32514",
       "title": "From Anomalies to Failures: Constructing Causal Error Graphs for Agentic Trace Diagnosis",
