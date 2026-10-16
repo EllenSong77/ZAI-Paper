@@ -216,7 +216,8 @@
         "2609.28561",
         "2609.32514",
         "2609.39692",
-        "2609.39903"
+        "2609.39903",
+        "2610.21459"
       ],
       "bootstrapped": true,
       "delivered": {
@@ -254,10 +255,15 @@
           "delivered_at": "2026-10-01T06:39:14Z",
           "message_id": "om_x100b64d44feba8a8c452151c94100a6",
           "seq": 7
+        },
+        "2610.21459": {
+          "delivered_at": "2026-10-16T05:14:31Z",
+          "message_id": "om_x100b622f65b808a4dd625717e4ab33f",
+          "seq": 8
         }
       },
       "target_fingerprint": "bffdda1af3704bd8a537f328fd0c548a4d4ce356caececf7a48364463dc0343d",
-      "updated_at": "2026-10-01T06:39:14Z"
+      "updated_at": "2026-10-16T05:14:31Z"
     }
   },
   "version": 1
