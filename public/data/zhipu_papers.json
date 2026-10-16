@@ -1,13 +1,34 @@
 {
   "summary": {
-    "updated_at": "2026-10-15T05:22:23.797451+00:00",
-    "final_count": 215,
+    "updated_at": "2026-10-16T05:14:01.681926+00:00",
+    "final_count": 216,
     "product_related": 30,
     "product_support": 18,
-    "academic_output": 167,
-    "new_papers": 0
+    "academic_output": 168,
+    "new_papers": 1
   },
   "rows": [
+    {
+      "arxiv_id": "2610.21459",
+      "title": "Can Visual Generation Expand What Unified Multimodal Models Know?",
+      "authors": "Wenkai Li, Wenyi Hong, Zhuoyi Yang, Jie Tang",
+      "translated_title": "视觉生成能否扩展统一多模态模型的知识？",
+      "translated_abstract": "统一多模态模型（UMM）接收图像生成监督，使其接触到文本中未完全记录的视觉信息。学习生成图像能否扩展预训练模型的知识？我们引入了知识转移探测（KTP），这是一种受控协议，通过图像生成训练提供新知识，并通过纯文本问答测试其可访问性。在七个知识类别和三个UMM中，我们观察到从视觉监督到语言的直接但不均匀的转移。受这些观察启发，我们依次引入了文本对齐和交错图文对齐，分别通过共享知识和交错响应连接生成与回答。对选定实体的引导可以在没有问答监督的情况下改善其他实体的知识访问，交错对齐则带来了额外收益。进一步分析表明，在图像中正确再现的知识通常更容易通过文本访问，尽管两种访问形式之间仍存在显著差距。这些发现支持将视觉生成作为文本监督之外的知识来源，并推动对训练数据设计和模型架构的联合研究，以使这些知识更广泛地被访问。",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "多模态",
+        "图像",
+        "生成",
+        "预训练",
+        "对齐"
+      ],
+      "institutions": [],
+      "abstract": "Unified multimodal models (UMMs) receive image-generation supervision that exposes them to visual information not fully documented in text. Can learning to generate images expand what pretrained models know? We introduce Knowledge Transfer Probing (KTP), a controlled protocol that supplies new knowledge through image-generation training and tests its accessibility through text-only question answering. Across seven knowledge categories and three UMMs, we observe direct but uneven transfer from visual supervision to language. Motivated by these observations, we successively introduce Textual Alignment and Interleaved Image--Text Alignment, which connect generation and answering through shared knowledge and interleaved responses, respectively. Guidance on selected entities can improve knowledge access on other entities without QA supervision, with additional gains from interleaved alignment. Further analysis shows that knowledge correctly reproduced in images is often more accessible through text, although substantial gaps remain between the two forms of access. These findings support visual generation as a source of knowledge beyond textual supervision, and motivate joint investigation of training data design and model architecture to make this knowledge more broadly accessible.",
+      "metadata_enriched": true,
+      "published": "2026-10-15",
+      "pdf_url": "https://arxiv.org/pdf/2610.21459v1",
+      "arxiv_url": "https://arxiv.org/abs/2610.21459v1"
+    },
     {
       "arxiv_id": "2609.39903",
       "title": "OSWorld-Science: A Benchmark of Computer Use Agents for Learning and Using Scientific Software",
@@ -32,13 +53,14 @@
       "arxiv_id": "2609.39692",
       "title": "GFD-OPD: Guidance-Folded On-Policy Distillation of Diffusion Models Across Scales",
       "authors": "Zhenxing Zhang, Jiayan Teng, Wenxu Wu, Zhuoyi Yang, Jiazheng Xu, Wendi Zheng, Jie Tang, Dan Guo, Meng Wang",
-      "translated_title": "跨尺度扩散模型的引导折叠在线策略蒸馏",
-      "translated_abstract": "在线策略蒸馏（OPD）在语言模型中展示了两项重要能力：将大型教师模型压缩为更小的学生模型，以及将专家模型合并为单一模型。然而，现有的扩散 OPD 大多关注后者，即教师和学生共享相同的骨干和规模。我们研究了从大型教师到小型学生的大到小扩散 OPD，并发现标准方案会失败。为了寻找根本原因，我们提出了 Fixed-State KL，这是一种在扩散模型的 OPD 训练期间衡量学生和教师之间分布差距的有效且公平的方法。我们首次阐明了大到小 OPD 对扩散模型具有挑战性的原因：较小的学生难以完美匹配较大教师的分布，而无分类器引导会累积并放大学生条件分支和无条件分支与教师之间的分布差异。为了解决这个问题，我们提出了 GFD-OPD，这是一种简单而有效的方法，能够缩小师生差距，同时避免 CFG 组合的误差放大。在大量实验中，GFD 在训练效率和最终性能上均优于先前的基线，在所有基准测试上取得了最先进的结果。",
+      "translated_title": "GFD-OPD：跨尺度扩散模型的引导折叠在线策略蒸馏",
+      "translated_abstract": "在线策略蒸馏（OPD）在语言模型中展示了两项重要能力：将大型教师模型压缩为小型学生模型，以及将专家模型合并为单一模型。然而，现有的扩散OPD大多关注后者，教师和学生共享相同的骨干和规模。我们研究从大型教师到小型学生的大到小扩散OPD，发现标准方案会失败。为了找到根本原因，我们提出了Fixed-State KL，一种有效且公平地测量扩散模型OPD训练期间学生与教师分布差距的方法。我们首次阐明为什么大到小OPD对扩散模型具有挑战性：较小的学生难以完美匹配较大教师的分布，而无分类器引导会累积并放大学生条件和无条件分支与教师之间的分布差异。为解决这一问题，我们提出GFD-OPD，一种简单有效的方法，可减小学生-教师差距，同时避免CFG组合的误差放大。在大量实验中，GFD在训练效率和最终性能上均优于先前基线，在所有基准上取得了最先进的结果。",
       "tag": "非产品相关",
       "topic_tags": [
-        "多模态",
+        "图像",
         "生成",
         "蒸馏",
+        "加速",
         "Benchmark"
       ],
       "institutions": [
