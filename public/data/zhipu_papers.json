@@ -1,6 +1,6 @@
 {
   "summary": {
-    "updated_at": "2026-10-17T05:16:03.672467+00:00",
+    "updated_at": "2026-10-18T05:14:30.851553+00:00",
     "final_count": 216,
     "product_related": 30,
     "product_support": 18,
@@ -12,15 +12,15 @@
       "arxiv_id": "2610.21459",
       "title": "Can Visual Generation Expand What Unified Multimodal Models Know?",
       "authors": "Wenkai Li, Wenyi Hong, Zhuoyi Yang, Jie Tang",
-      "translated_title": "视觉生成能否扩展统一多模态模型的知识？",
-      "translated_abstract": "统一多模态模型（UMM）接收图像生成监督，使其接触到文本中未完全记录的视觉信息。学习生成图像能否扩展预训练模型的知识？我们引入了知识转移探测（KTP），这是一种受控协议，通过图像生成训练提供新知识，并通过纯文本问答测试其可访问性。在七个知识类别和三个UMM中，我们观察到从视觉监督到语言的直接但不均匀的转移。受这些观察启发，我们依次引入了文本对齐和交错图文对齐，分别通过共享知识和交错响应连接生成与回答。对选定实体的引导可以在没有问答监督的情况下改善其他实体的知识访问，交错对齐则带来了额外收益。进一步分析表明，在图像中正确再现的知识通常更容易通过文本访问，尽管两种访问形式之间仍存在显著差距。这些发现支持将视觉生成作为文本监督之外的知识来源，并推动对训练数据设计和模型架构的联合研究，以使这些知识更广泛地被访问。",
+      "translated_title": "视觉生成能否扩展统一多模态模型所知？",
+      "translated_abstract": "统一多模态模型（UMM）接收图像生成监督，使其接触到文本中未完全记录的视觉信息。学习生成图像能否扩展预训练模型所知？我们引入知识迁移探测（KTP），这是一种受控协议，通过图像生成训练提供新知识，并通过纯文本问答测试其可访问性。在七个知识类别和三个 UMM 中，我们观察到从视觉监督到语言的直接但不均匀的迁移。基于这些观察，我们依次引入文本对齐和交错图文对齐，分别通过共享知识和交错响应连接生成与回答。对选定实体的引导可以在没有问答监督的情况下改善其他实体上的知识访问，交错对齐则带来额外收益。进一步分析表明，在图像中正确复现的知识通常更容易通过文本访问，尽管两种访问形式之间仍存在显著差距。这些发现支持将视觉生成作为文本监督之外的知识来源，并推动对训练数据设计和模型架构的联合研究，以使这些知识更广泛可及。",
       "tag": "非产品相关",
       "topic_tags": [
         "多模态",
-        "图像",
         "生成",
         "预训练",
-        "对齐"
+        "对齐",
+        "评测"
       ],
       "institutions": [],
       "abstract": "Unified multimodal models (UMMs) receive image-generation supervision that exposes them to visual information not fully documented in text. Can learning to generate images expand what pretrained models know? We introduce Knowledge Transfer Probing (KTP), a controlled protocol that supplies new knowledge through image-generation training and tests its accessibility through text-only question answering. Across seven knowledge categories and three UMMs, we observe direct but uneven transfer from visual supervision to language. Motivated by these observations, we successively introduce Textual Alignment and Interleaved Image--Text Alignment, which connect generation and answering through shared knowledge and interleaved responses, respectively. Guidance on selected entities can improve knowledge access on other entities without QA supervision, with additional gains from interleaved alignment. Further analysis shows that knowledge correctly reproduced in images is often more accessible through text, although substantial gaps remain between the two forms of access. These findings support visual generation as a source of knowledge beyond textual supervision, and motivate joint investigation of training data design and model architecture to make this knowledge more broadly accessible.",
