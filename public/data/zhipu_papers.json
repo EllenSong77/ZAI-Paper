@@ -1,13 +1,33 @@
 {
   "summary": {
-    "updated_at": "2026-10-18T05:14:30.851553+00:00",
-    "final_count": 216,
+    "updated_at": "2026-10-19T05:25:57.787717+00:00",
+    "final_count": 217,
     "product_related": 30,
     "product_support": 18,
-    "academic_output": 168,
-    "new_papers": 0
+    "academic_output": 169,
+    "new_papers": 1
   },
   "rows": [
+    {
+      "arxiv_id": "2610.23104",
+      "title": "WebCoder: Scaling General Frontend Development with Artifact-Grounded Agentic Reinforcement Learning",
+      "authors": "Zijun Dou, Zhen Yang, Xijun Liu, Dongzhuoran Zhou, Aohan Zeng, Jie Tang",
+      "translated_title": "WebCoder：基于产物驱动的智能体强化学习扩展通用前端开发",
+      "translated_abstract": "真实世界的前端开发要求智能体在不断演进的应用状态上组合执行复现、生成、修改和修复。为这一过程学习通用策略，需要将异构的执行反馈转化为与任务对齐的奖励，并在长序列的相互依赖动作中进行有效的信用分配。我们提出了 WebCoder，一个通过产物驱动的智能体强化学习训练的通用前端开发智能体。我们的核心思想是通过多样开发活动对共享可执行产物及其对任务需求满足度的影响来评估这些活动。我们构建了 Webdev-World，这是一个集成了代码编辑、应用执行、浏览器检查和按需技能的可执行环境，同时能在交互间保留项目状态。独立的验证器根据任务需求评估最终应用以提供终端奖励，而中间产物进度的变化将由此产生的 rollout 优势重新分配到各个开发片段中。上下文压缩和消息树样本构建支持在超出单一上下文窗口的轨迹上进行训练，同时避免对共享的生成历史进行重复的损失计算。我们进一步引入 Webdev-Bench 来评估单个项目内组合的开发需求。在 Webdev-Bench 上，WebCoder-27B 将需求满足度从其 Qwen3.8-27B 基础模型的 64.8 提升至 72.8，超过了 Claude-Opus-4.8 (65.1) 和 GPT-5.4 (59.6)；在 Vision2Web 上，它将平均视觉和功能得分从 41.1 提升至 62.4，与 Claude-Opus-4.8 相当。消融实验证实了产物驱动信用分配和长周期训练的贡献。",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "代码",
+        "智能体",
+        "强化学习",
+        "评测"
+      ],
+      "institutions": [],
+      "abstract": "Real-world frontend development requires agents to compose reproduction, generation, modification, and repair over an evolving application state. Learning a general policy for this process requires translating heterogeneous execution feedback into task-aligned rewards and effective credit assignment across long sequences of interdependent actions. We introduce WebCoder, a general frontend development agent trained with artifact-grounded agentic reinforcement learning. Our key idea is to assess diverse development activities through their effects on a shared executable artifact and its satisfaction of task requirements. We build Webdev-World, an executable environment that integrates code editing, application execution, browser inspection, and on-demand skills while preserving project state across interactions. An independent verifier evaluates the final application against task requirements to provide terminal rewards, while changes in intermediate artifact progress redistribute the resulting rollout advantage across development segments. Context compaction and message-tree sample construction support training on trajectories beyond a single context window while avoiding repeated loss computation on shared generated history. We further introduce Webdev-Bench to evaluate composed development requirements within a single project. On Webdev-Bench, WebCoder-27B raises requirement satisfaction from 64.8 for its Qwen3.8-27B base model to 72.8, exceeding Claude-Opus-4.8 (65.1) and GPT-5.4 (59.6); on Vision2Web, it improves the average visual and functional score from 41.1 to 62.4, on par with Claude-Opus-4.8. Ablation studies confirm the contributions of artifact-grounded credit assignment and long-horizon training.",
+      "metadata_enriched": true,
+      "published": "2026-10-16",
+      "pdf_url": "https://arxiv.org/pdf/2610.23104v1",
+      "arxiv_url": "https://arxiv.org/abs/2610.23104v1"
+    },
     {
       "arxiv_id": "2610.21459",
       "title": "Can Visual Generation Expand What Unified Multimodal Models Know?",
