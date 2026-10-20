@@ -1,25 +1,47 @@
 {
   "summary": {
-    "updated_at": "2026-10-19T05:25:57.787717+00:00",
-    "final_count": 217,
+    "updated_at": "2026-10-20T05:28:36.658583+00:00",
+    "final_count": 218,
     "product_related": 30,
-    "product_support": 18,
+    "product_support": 19,
     "academic_output": 169,
     "new_papers": 1
   },
   "rows": [
     {
+      "arxiv_id": "2610.26770",
+      "title": "HarnessPro: Recursive Harness Self-Improvement with Pareto Optimization for Performance-Cost Trade-offs",
+      "authors": "Zhuoshi Pan, ZhiYuan Feng, Yukuo Cen, Honglin Lin, Junru Lu, Zhongxia Chen, Shuo Yang, H. Vicky Zhao, Jie Tang",
+      "translated_title": "HarnessPro：基于帕累托优化的递归测试框架自我改进以实现性能与成本权衡",
+      "translated_abstract": "测试框架的开发在构建强大的人工智能智能体中起着至关重要的作用。近期的方法通过递归自我改进（RSI）来提升测试框架，但其性能提升往往伴随着更高的执行成本。我们提出了 HarnessPro，这是一种无标签的测试框架演化方法，能够在降低执行成本的同时提高任务性能。在此设定下，候选测试框架通过 LLM 生成的测试进行评估，而无需访问真实答案或官方测试。专门的智能体会诊断执行轨迹，规划具有不同性能与成本优先级的更新，并将其作为候选测试框架实施。HarnessPro 并非返回单一测试框架，而是使用归一化加权平方距离选择，为不同的部署预算提供侧重成本、平衡型和侧重性能的测试框架。选定的测试框架将进入下一次迭代，其中执行反馈会指导进一步的更新。我们的实验涵盖了 Terminal-Bench 2、SWE-Bench Pro 和 ProgramBench，使用 GPT-5.5 配合 Codex 以及 GLM-5.2 配合 Claude Code。在使用 GPT-5.5 配合 Codex 的这些基准测试中，HarnessPro 的侧重性能模式相较于 RHO 实现了 2.0 个百分点的平均通过率提升，并将平均每任务成本降低了 26.1%。在使用 GLM-5.2 配合 Claude Code 时，这一优势同样存在。代码可在 https://github.com/pzs19/HarnessPro 获取。",
+      "tag": "产品技术支持",
+      "topic_tags": [
+        "智能体",
+        "强化学习",
+        "推理",
+        "评测",
+        "加速"
+      ],
+      "institutions": [],
+      "abstract": "Harness development plays a crucial role in building capable AI agents. Recent approaches improve harnesses through recursive self-improvement (RSI), but their performance gains often come with higher execution costs. We introduce HarnessPro, a label-free method for evolving harnesses to improve task performance while reducing execution cost. In this setting, candidate harnesses are evaluated using LLM-generated tests without access to ground-truth solutions or official tests. Specialized agents diagnose execution trajectories, plan updates with different performance-cost priorities, and implement them as candidate harnesses. Rather than returning a single harness, HarnessPro uses normalized weighted squared-distance selection to provide cost-focused (lite), balanced (medium), and performance-focused (heavy) harnesses for different deployment budgets. Selected harnesses enter the next iteration, where execution feedback guides further updates. Our experiments cover Terminal-Bench 2, SWE-Bench Pro, and ProgramBench, using GPT-5.5 with Codex and GLM-5.2 with Claude Code. Across these benchmarks using GPT-5.5 with Codex, the heavy mode of HarnessPro achieves an average pass-rate gain of 2.0 percentage points and an average per-task cost reduction of 26.1% relative to RHO. This advantage also holds when using GLM-5.2 with Claude Code. Code is available at https://github.com/pzs19/HarnessPro",
+      "metadata_enriched": true,
+      "published": "2026-10-19",
+      "pdf_url": "https://arxiv.org/pdf/2610.26770v1",
+      "arxiv_url": "https://arxiv.org/abs/2610.26770v1"
+    },
+    {
       "arxiv_id": "2610.23104",
       "title": "WebCoder: Scaling General Frontend Development with Artifact-Grounded Agentic Reinforcement Learning",
       "authors": "Zijun Dou, Zhen Yang, Xijun Liu, Dongzhuoran Zhou, Aohan Zeng, Jie Tang",
       "translated_title": "WebCoder：基于产物驱动的智能体强化学习扩展通用前端开发",
-      "translated_abstract": "真实世界的前端开发要求智能体在不断演进的应用状态上组合执行复现、生成、修改和修复。为这一过程学习通用策略，需要将异构的执行反馈转化为与任务对齐的奖励，并在长序列的相互依赖动作中进行有效的信用分配。我们提出了 WebCoder，一个通过产物驱动的智能体强化学习训练的通用前端开发智能体。我们的核心思想是通过多样开发活动对共享可执行产物及其对任务需求满足度的影响来评估这些活动。我们构建了 Webdev-World，这是一个集成了代码编辑、应用执行、浏览器检查和按需技能的可执行环境，同时能在交互间保留项目状态。独立的验证器根据任务需求评估最终应用以提供终端奖励，而中间产物进度的变化将由此产生的 rollout 优势重新分配到各个开发片段中。上下文压缩和消息树样本构建支持在超出单一上下文窗口的轨迹上进行训练，同时避免对共享的生成历史进行重复的损失计算。我们进一步引入 Webdev-Bench 来评估单个项目内组合的开发需求。在 Webdev-Bench 上，WebCoder-27B 将需求满足度从其 Qwen3.8-27B 基础模型的 64.8 提升至 72.8，超过了 Claude-Opus-4.8 (65.1) 和 GPT-5.4 (59.6)；在 Vision2Web 上，它将平均视觉和功能得分从 41.1 提升至 62.4，与 Claude-Opus-4.8 相当。消融实验证实了产物驱动信用分配和长周期训练的贡献。",
+      "translated_abstract": "真实世界的前端开发要求智能体在不断演化的应用状态上组合复现、生成、修改和修复操作。学习这一过程的通用策略需要将异构的执行反馈转化为与任务对齐的奖励，并在长序列的相互依赖动作中进行有效的信用分配。我们提出了 WebCoder，这是一个通过产物驱动的智能体强化学习训练的通用前端开发智能体。我们的核心思想是通过多样开发活动对共享可执行产物及其对任务需求满足度的影响来评估这些活动。我们构建了 Webdev-World，这是一个集成了代码编辑、应用执行、浏览器检查和按需技能的可执行环境，同时能在交互间保留项目状态。独立的验证器会根据任务需求评估最终应用以提供终端奖励，而中间产物进度的变化会将生成的 rollout 优势重新分配到各个开发片段中。上下文压缩和消息树样本构建支持在超出单一上下文窗口的轨迹上进行训练，同时避免对共享的生成历史进行重复的损失计算。我们进一步提出了 Webdev-Bench，用于评估单个项目内组合的开发需求。在 Webdev-Bench 上，WebCoder-27B 将其 Qwen3.8-27B 基础模型的需求满足度从 64.8 提升至 72.8，超过了 Claude-Opus-4.8（65.1）和 GPT-5.4（59.6）；在 Vision2Web 上，它将平均视觉和功能得分从 41.1 提高到了 62.4，与 Claude-Opus-4.8 相当。消融实验证实了产物驱动信用分配和长周期训练的贡献。",
       "tag": "非产品相关",
       "topic_tags": [
-        "代码",
         "智能体",
         "强化学习",
-        "评测"
+        "代码",
+        "生成",
+        "Benchmark"
       ],
       "institutions": [],
       "abstract": "Real-world frontend development requires agents to compose reproduction, generation, modification, and repair over an evolving application state. Learning a general policy for this process requires translating heterogeneous execution feedback into task-aligned rewards and effective credit assignment across long sequences of interdependent actions. We introduce WebCoder, a general frontend development agent trained with artifact-grounded agentic reinforcement learning. Our key idea is to assess diverse development activities through their effects on a shared executable artifact and its satisfaction of task requirements. We build Webdev-World, an executable environment that integrates code editing, application execution, browser inspection, and on-demand skills while preserving project state across interactions. An independent verifier evaluates the final application against task requirements to provide terminal rewards, while changes in intermediate artifact progress redistribute the resulting rollout advantage across development segments. Context compaction and message-tree sample construction support training on trajectories beyond a single context window while avoiding repeated loss computation on shared generated history. We further introduce Webdev-Bench to evaluate composed development requirements within a single project. On Webdev-Bench, WebCoder-27B raises requirement satisfaction from 64.8 for its Qwen3.8-27B base model to 72.8, exceeding Claude-Opus-4.8 (65.1) and GPT-5.4 (59.6); on Vision2Web, it improves the average visual and functional score from 41.1 to 62.4, on par with Claude-Opus-4.8. Ablation studies confirm the contributions of artifact-grounded credit assignment and long-horizon training.",
