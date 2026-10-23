@@ -1,13 +1,33 @@
 {
   "summary": {
-    "updated_at": "2026-10-22T05:32:50.330171+00:00",
-    "final_count": 218,
+    "updated_at": "2026-10-23T05:30:59.394279+00:00",
+    "final_count": 219,
     "product_related": 30,
     "product_support": 19,
-    "academic_output": 169,
-    "new_papers": 0
+    "academic_output": 170,
+    "new_papers": 1
   },
   "rows": [
+    {
+      "arxiv_id": "2610.31372",
+      "title": "RIDAR: Safeguarding Research Integrity in Autonomous Research Agents via Automated Detection and Runtime Intervention",
+      "authors": "Jiening Siow, Amy Xin, Junjie Wang, Ziyu Tang, Zijun Yao, Yunjia Qi, Fanjin Zhang, Lei Hou, Jie Tang, Juanzi Li",
+      "translated_title": "RIDAR：通过自动检测与运行时干预保障自主研究智能体的科研诚信",
+      "translated_abstract": "自主研究智能体越来越多地被用于自动化科学研究的大部分环节，但它们容易出现科研诚信违规行为：即损害研究过程的有效性、可重复性或忠实性的行为。我们提出了 RIDAR，一个用于自动检测 RIV 和运行时干预的框架。首先，我们引入了 RIVT，这是一个涵盖整个研究生命周期的 14 种 RIV 类型的综合分类法。在 RIVT 的基础上，我们提出了 RIDAR-post-hoc，一个用于检测智能体轨迹中 RIV 的框架。RIDAR-post-hoc 在 RIV-Gold 上达到了 85.2% 的 F1 性能，RIV-Gold 是一个包含 60 条专家标注轨迹的 RIV 检测基准。将 RIDAR-post-hoc 应用于 RIV-Wild（一个包含 50 个不同研究任务的 300 条智能体轨迹的数据集），我们在 99.7% 的轨迹中检测到了 3,964 个 RIV 实例，揭示了当前智能体中 RIV 的普遍性。最后，我们提出了 RIDAR-runtime，一个在智能体运行时动态检测和纠正 RIV 的框架。RIDAR-runtime 有效地将任务完成时剩余的智能体 RIV 减少了 36.8%。我们将发布我们的代码和数据以促进未来的研究。",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "智能体",
+        "安全",
+        "评测",
+        "Benchmark"
+      ],
+      "institutions": [],
+      "abstract": "Autonomous research agents are increasingly used to automate large portions of scientific research, yet they are prone to research integrity violations (RIVs): behaviors that compromise the validity, reproducibility, or faithfulness of the research process. We present RIDAR, a framework for automated RIV detection and runtime intervention. First, we introduce RIVT, a comprehensive taxonomy of 14 RIV types spanning the full research lifecycle. Building on RIVT, we present RIDAR-post-hoc, a framework to detect RIVs within agent trajectories. RIDAR-post-hoc achieves 85.2% F1 performance on RIV-Gold, a benchmark for RIV detection with 60 expert-annotated trajectories. Applying RIDAR-post-hoc to RIV-Wild, a dataset of 300 agent trajectories across 50 distinct research tasks, we detect 3,964 RIV instances in 99.7% of trajectories, revealing the prevalence of RIVs in current agents. Finally, we present RIDAR-runtime, a framework for dynamically detecting and correcting RIVs during agent runtime. RIDAR-runtime effectively reduces agent RIVs remaining at task completion by 36.8%. We will release our code and data to facilitate future research.",
+      "metadata_enriched": true,
+      "published": "2026-10-22",
+      "pdf_url": "https://arxiv.org/pdf/2610.31372v1",
+      "arxiv_url": "https://arxiv.org/abs/2610.31372v1"
+    },
     {
       "arxiv_id": "2610.26770",
       "title": "HarnessPro: Recursive Harness Self-Improvement with Pareto Optimization for Performance-Cost Trade-offs",
