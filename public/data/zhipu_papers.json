@@ -1,6 +1,6 @@
 {
   "summary": {
-    "updated_at": "2026-10-26T05:30:51.933764+00:00",
+    "updated_at": "2026-10-27T05:45:55.048846+00:00",
     "final_count": 219,
     "product_related": 30,
     "product_support": 19,
@@ -13,7 +13,7 @@
       "title": "RIDAR: Safeguarding Research Integrity in Autonomous Research Agents via Automated Detection and Runtime Intervention",
       "authors": "Jiening Siow, Amy Xin, Junjie Wang, Ziyu Tang, Zijun Yao, Yunjia Qi, Fanjin Zhang, Lei Hou, Jie Tang, Juanzi Li",
       "translated_title": "RIDAR：通过自动检测与运行时干预保障自主研究智能体的科研诚信",
-      "translated_abstract": "自主研究智能体越来越多地被用于自动化科学研究的大部分环节，但它们容易出现科研诚信违规行为：即损害研究过程有效性、可重复性或忠实性的行为。我们提出了 RIDAR，一个用于自动检测 RIV 和运行时干预的框架。首先，我们引入了 RIVT，这是一个涵盖完整研究生命周期的 14 种 RIV 类型的综合分类法。在 RIVT 的基础上，我们提出了 RIDAR-post-hoc，一个用于检测智能体轨迹中 RIV 的框架。RIDAR-post-hoc 在 RIV-Gold 上取得了 85.2% 的 F1 性能，RIV-Gold 是一个包含 60 条专家标注轨迹的 RIV 检测基准。将 RIDAR-post-hoc 应用于 RIV-Wild（一个包含 50 个不同研究任务的 300 条智能体轨迹的数据集），我们在 99.7% 的轨迹中检测到了 3,964 个 RIV 实例，揭示了当前智能体中 RIV 的普遍性。最后，我们提出了 RIDAR-runtime，一个在智能体运行时动态检测和纠正 RIV 的框架。RIDAR-runtime 有效地将任务完成时剩余的智能体 RIV 减少了 36.8%。我们将发布我们的代码和数据以促进未来的研究。",
+      "translated_abstract": "自主研究智能体越来越多地被用于自动化科学研究的大部分环节，然而它们容易出现科研诚信违规：即损害研究过程有效性、可重复性或忠实性的行为。我们提出了RIDAR，一个用于自动检测RIV和运行时干预的框架。首先，我们引入了RIVT，这是一种涵盖完整研究生命周期的14种RIV类型的综合分类法。在RIVT的基础上，我们提出了RIDAR-post-hoc，一个用于在智能体轨迹中检测RIV的框架。RIDAR-post-hoc在RIV-Gold上达到了85.2%的F1性能，RIV-Gold是一个包含60条专家标注轨迹的RIV检测基准测试。将RIDAR-post-hoc应用于RIV-Wild（一个包含50个不同研究任务的300条智能体轨迹的数据集），我们在99.7%的轨迹中检测到了3,964个RIV实例，揭示了当前智能体中RIV的普遍性。最后，我们提出了RIDAR-runtime，一个在智能体运行时动态检测和纠正RIV的框架。RIDAR-runtime有效地将任务完成时剩余的智能体RIV减少了36.8%。我们将发布我们的代码和数据以促进未来的研究。",
       "tag": "非产品相关",
       "topic_tags": [
         "智能体",
@@ -21,27 +21,32 @@
         "评测",
         "Benchmark"
       ],
-      "institutions": [],
+      "institutions": [
+        "Tsinghua University"
+      ],
       "abstract": "Autonomous research agents are increasingly used to automate large portions of scientific research, yet they are prone to research integrity violations (RIVs): behaviors that compromise the validity, reproducibility, or faithfulness of the research process. We present RIDAR, a framework for automated RIV detection and runtime intervention. First, we introduce RIVT, a comprehensive taxonomy of 14 RIV types spanning the full research lifecycle. Building on RIVT, we present RIDAR-post-hoc, a framework to detect RIVs within agent trajectories. RIDAR-post-hoc achieves 85.2% F1 performance on RIV-Gold, a benchmark for RIV detection with 60 expert-annotated trajectories. Applying RIDAR-post-hoc to RIV-Wild, a dataset of 300 agent trajectories across 50 distinct research tasks, we detect 3,964 RIV instances in 99.7% of trajectories, revealing the prevalence of RIVs in current agents. Finally, we present RIDAR-runtime, a framework for dynamically detecting and correcting RIVs during agent runtime. RIDAR-runtime effectively reduces agent RIVs remaining at task completion by 36.8%. We will release our code and data to facilitate future research.",
       "metadata_enriched": true,
       "published": "2026-10-22",
-      "pdf_url": "https://arxiv.org/pdf/2610.31372v1",
-      "arxiv_url": "https://arxiv.org/abs/2610.31372v1"
+      "pdf_url": "https://arxiv.org/pdf/2610.31372v2",
+      "arxiv_url": "https://arxiv.org/abs/2610.31372v2"
     },
     {
       "arxiv_id": "2610.26770",
       "title": "HarnessPro: Recursive Harness Self-Improvement with Pareto Optimization for Performance-Cost Trade-offs",
       "authors": "Zhuoshi Pan, ZhiYuan Feng, Yukuo Cen, Honglin Lin, Junru Lu, Zhongxia Chen, Shuo Yang, H. Vicky Zhao, Jie Tang",
-      "translated_title": "HarnessPro：基于帕累托优化的递归测试套件自我改进以实现性能与成本权衡",
-      "translated_abstract": "测试套件开发在构建能力强大的智能体中起着至关重要的作用。近期的方法通过递归自我改进（RSI）来优化测试套件，但其性能提升往往伴随着更高的执行成本。我们提出了 HarnessPro，这是一种无标签方法，用于演化测试套件以在降低执行成本的同时提高任务性能。在此设定下，候选测试套件使用 LLM 生成的测试进行评估，而无需访问真实答案或官方测试。专门的智能体会诊断执行轨迹，规划具有不同性能-成本优先级的更新，并将其作为候选测试套件实现。HarnessPro 不返回单一测试套件，而是使用归一化加权平方距离选择，为不同的部署预算提供侧重成本（lite）、平衡（medium）和侧重性能（heavy）的测试套件。选定的测试套件进入下一次迭代，执行反馈指导进一步的更新。我们的实验涵盖了 Terminal-Bench 2、SWE-Bench Pro 和 ProgramBench，使用 GPT-5.5 配合 Codex 以及 GLM-5.2 配合 Claude Code。在使用 GPT-5.5 配合 Codex 的这些基准测试中，HarnessPro 的 heavy 模式相对于 RHO 实现了 2.0 个百分点的平均通过率提升和 26.1% 的平均单任务成本降低。使用 GLM-5.2 配合 Claude Code 时也保持了这一优势。代码可在 https://github.com/pzs19/HarnessPro 获取。",
+      "translated_title": "HarnessPro：基于帕累托优化的递归测试框架自我改进以实现性能与成本权衡",
+      "translated_abstract": "测试框架开发在构建强大AI智能体中起着至关重要的作用。最近的方法通过递归自我改进（RSI）来改进测试框架，但其性能提升通常伴随着更高的执行成本。我们引入了HarnessPro，这是一种无标签的测试框架演化方法，旨在提高任务性能的同时降低执行成本。在此设置中，候选测试框架使用LLM生成的测试进行评估，而无需访问真实答案或官方测试。专门的智能体诊断执行轨迹，规划具有不同性能-成本优先级的更新，并将其作为候选测试框架实现。HarnessPro不是返回单个测试框架，而是使用归一化加权平方距离选择，为不同的部署预算提供侧重成本、平衡型和侧重性能的测试框架。选定的测试框架进入下一次迭代，其中执行反馈指导进一步的更新。我们的实验涵盖了Terminal-Bench 2、SWE-Bench Pro和ProgramBench，使用带有Codex的GPT-5.5和带有Claude Code的GLM-5.2。在使用带有Codex的GPT-5.5的这些基准测试中，HarnessPro的重度模式相对于RHO实现了2.0个百分点的平均通过率增益和26.1%的平均单任务成本降低。在使用带有Claude Code的GLM-5.2时，这种优势同样存在。代码可在https://github.com/pzs19/HarnessPro获取。",
       "tag": "产品技术支持",
       "topic_tags": [
         "智能体",
         "推理",
         "评测",
-        "强化学习"
+        "加速"
       ],
-      "institutions": [],
+      "institutions": [
+        "Tsinghua University",
+        "Z.AI"
+      ],
       "abstract": "Harness development plays a crucial role in building capable AI agents. Recent approaches improve harnesses through recursive self-improvement (RSI), but their performance gains often come with higher execution costs. We introduce HarnessPro, a label-free method for evolving harnesses to improve task performance while reducing execution cost. In this setting, candidate harnesses are evaluated using LLM-generated tests without access to ground-truth solutions or official tests. Specialized agents diagnose execution trajectories, plan updates with different performance-cost priorities, and implement them as candidate harnesses. Rather than returning a single harness, HarnessPro uses normalized weighted squared-distance selection to provide cost-focused (lite), balanced (medium), and performance-focused (heavy) harnesses for different deployment budgets. Selected harnesses enter the next iteration, where execution feedback guides further updates. Our experiments cover Terminal-Bench 2, SWE-Bench Pro, and ProgramBench, using GPT-5.5 with Codex and GLM-5.2 with Claude Code. Across these benchmarks using GPT-5.5 with Codex, the heavy mode of HarnessPro achieves an average pass-rate gain of 2.0 percentage points and an average per-task cost reduction of 26.1% relative to RHO. This advantage also holds when using GLM-5.2 with Claude Code. Code is available at https://github.com/pzs19/HarnessPro",
       "metadata_enriched": true,
       "published": "2026-10-19",
