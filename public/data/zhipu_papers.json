@@ -1,19 +1,38 @@
 {
   "summary": {
-    "updated_at": "2026-11-03T07:20:08.745252+00:00",
-    "final_count": 219,
+    "updated_at": "2026-11-04T07:03:02.229951+00:00",
+    "final_count": 220,
     "product_related": 30,
     "product_support": 19,
-    "academic_output": 170,
-    "new_papers": 0
+    "academic_output": 171,
+    "new_papers": 1
   },
   "rows": [
+    {
+      "arxiv_id": "2611.04239",
+      "title": "LIRA: A More Interpretable Dynamic Loss-Informed Rank Allocation for Low-Rank Adaptation",
+      "authors": "Sihao Wang, Bozheng Li, Xuemiao Xu, Haoxin Yang, Yujie Xu, Jie Tang",
+      "translated_title": "LIRA：一种面向低秩自适应的更具可解释性的动态损失感知秩分配方法",
+      "translated_abstract": "低秩自适应已成为大型预训练模型中广泛使用的参数高效微调方法。然而，标准 LoRA 通常分配固定的秩配置，忽略了层和阶段的自适应需求，而近期的自适应秩变体通常依赖启发式或一阶信号，这些信号仅提供秩重分配与局部损失行为之间的间接联系。这使得每次秩重分配背后的原理缺乏充分的可解释性。基于这一不足，我们提出了 LIRA（损失感知秩分配），这是一种动态秩 LoRA 方法，旨在使在线秩重分配更具可解释性。LIRA 通过在二阶近似下估计与近期 LoRA 因子移动相关的局部损失扰动幅度来对每层进行评分，使每次秩变化的基础能够逐项解释。通过定期应用 DELTA（基于位移的损失轨迹分配算法，一种用于 LoRA 秩重分配的位移算法），LIRA 在匹配预算下产生离散的有效秩，同时保持与标准 (A,B) 适配器兼容。在 La-LoRA/LoRA 协议下的 RoBERTa-base GLUE 任务中，LIRA 优于该协议下报告的均匀 LoRA 和自适应秩基线；轨迹 EMA 在较低估计成本下实现了与定点 Fisher 相当的性能。",
+      "tag": "非产品相关",
+      "topic_tags": [
+        "模型",
+        "微调",
+        "预训练"
+      ],
+      "institutions": [],
+      "abstract": "Low-rank adaptation (LoRA) has become a widely used parameter-efficient fine-tuning method for large pretrained models. However, standard LoRA typically assigns a fixed rank profile despite layer- and stage-dependent adaptation needs, while recent adaptive-rank variants often rely on heuristic or first-order signals that provide only an indirect link between rank reallocation and local loss behavior. This leaves the rationale behind each rank reallocation insufficiently interpretable. Motivated by this gap, we propose LIRA (Loss-Informed Rank Allocation), a dynamic-rank LoRA method designed to make online rank reallocation more interpretable. LIRA scores each layer by the estimated magnitude of the local loss perturbation associated with its recent LoRA-factor movements under a second-order approximation, making the basis for each rank change interpretable term by term. By periodically applying DELTA (Displacement-Evaluated Loss-Trajectory Allocation), a displacement-based algorithm for LoRA rank reallocation, LIRA produces discrete effective ranks under matched budgets while remaining compatible with standard (A,B) adapters. On RoBERTa-base GLUE under the La-LoRA/LoRA protocol, LIRA outperforms the uniform-LoRA and adaptive-rank baselines reported under this protocol; Trajectory EMA attains performance competitive with Fixed-point Fisher at lower estimation cost.",
+      "metadata_enriched": true,
+      "published": "2026-11-03",
+      "pdf_url": "https://arxiv.org/pdf/2611.04239v1",
+      "arxiv_url": "https://arxiv.org/abs/2611.04239v1"
+    },
     {
       "arxiv_id": "2610.31372",
       "title": "RIDAR: Safeguarding Research Integrity in Autonomous Research Agents via Automated Detection and Runtime Intervention",
       "authors": "Jiening Siow, Amy Xin, Junjie Wang, Ziyu Tang, Zijun Yao, Yunjia Qi, Fanjin Zhang, Lei Hou, Jie Tang, Juanzi Li",
       "translated_title": "RIDAR：通过自动检测与运行时干预保障自主研究智能体的科研诚信",
-      "translated_abstract": "自主研究智能体越来越多地被用于自动化科学研究的大部分环节，然而它们容易出现科研诚信违规：即损害研究过程有效性、可重复性或忠实性的行为。我们提出了RIDAR，一个用于自动检测RIV和运行时干预的框架。首先，我们引入了RIVT，这是一种涵盖完整研究生命周期的14种RIV类型的综合分类法。在RIVT的基础上，我们提出了RIDAR-post-hoc，一个用于在智能体轨迹中检测RIV的框架。RIDAR-post-hoc在RIV-Gold上达到了85.2%的F1性能，RIV-Gold是一个包含60条专家标注轨迹的RIV检测基准测试。将RIDAR-post-hoc应用于RIV-Wild（一个包含50个不同研究任务的300条智能体轨迹的数据集），我们在99.7%的轨迹中检测到了3,964个RIV实例，揭示了当前智能体中RIV的普遍性。最后，我们提出了RIDAR-runtime，一个在智能体运行时动态检测和纠正RIV的框架。RIDAR-runtime有效地将任务完成时剩余的智能体RIV减少了36.8%。我们将发布我们的代码和数据以促进未来的研究。",
+      "translated_abstract": "自主研究智能体越来越多地被用于自动化科学研究的大部分环节，但它们容易出现科研诚信违规行为：即损害研究过程有效性、可重复性或忠实性的行为。我们提出了 RIDAR，一个用于自动检测 RIV 和运行时干预的框架。首先，我们引入了 RIVT，一个涵盖完整研究生命周期的 14 种 RIV 类型的综合分类法。基于 RIVT，我们提出了 RIDAR-post-hoc，一个用于检测智能体轨迹内 RIV 的框架。RIDAR-post-hoc 在 RIV-Gold（一个包含 60 条专家标注轨迹的 RIV 检测基准）上达到了 85.2% 的 F1 性能。将 RIDAR-post-hoc 应用于 RIV-Wild（一个包含跨 50 个不同研究任务的 300 条智能体轨迹的数据集），我们在 99.7% 的轨迹中检测到了 3,964 个 RIV 实例，揭示了当前智能体中 RIV 的普遍性。最后，我们提出了 RIDAR-runtime，一个在智能体运行时动态检测和纠正 RIV 的框架。RIDAR-runtime 有效地将任务完成时剩余的智能体 RIV 减少了 36.8%。我们将发布代码和数据以促进未来的研究。",
       "tag": "非产品相关",
       "topic_tags": [
         "智能体",
@@ -34,14 +53,14 @@
       "arxiv_id": "2610.26770",
       "title": "HarnessPro: Recursive Harness Self-Improvement with Pareto Optimization for Performance-Cost Trade-offs",
       "authors": "Zhuoshi Pan, ZhiYuan Feng, Yukuo Cen, Honglin Lin, Junru Lu, Zhongxia Chen, Shuo Yang, H. Vicky Zhao, Jie Tang",
-      "translated_title": "HarnessPro：基于帕累托优化的递归测试框架自我改进以实现性能与成本权衡",
-      "translated_abstract": "测试框架开发在构建强大AI智能体中起着至关重要的作用。最近的方法通过递归自我改进（RSI）来改进测试框架，但其性能提升通常伴随着更高的执行成本。我们引入了HarnessPro，这是一种无标签的测试框架演化方法，旨在提高任务性能的同时降低执行成本。在此设置中，候选测试框架使用LLM生成的测试进行评估，而无需访问真实答案或官方测试。专门的智能体诊断执行轨迹，规划具有不同性能-成本优先级的更新，并将其作为候选测试框架实现。HarnessPro不是返回单个测试框架，而是使用归一化加权平方距离选择，为不同的部署预算提供侧重成本、平衡型和侧重性能的测试框架。选定的测试框架进入下一次迭代，其中执行反馈指导进一步的更新。我们的实验涵盖了Terminal-Bench 2、SWE-Bench Pro和ProgramBench，使用带有Codex的GPT-5.5和带有Claude Code的GLM-5.2。在使用带有Codex的GPT-5.5的这些基准测试中，HarnessPro的重度模式相对于RHO实现了2.0个百分点的平均通过率增益和26.1%的平均单任务成本降低。在使用带有Claude Code的GLM-5.2时，这种优势同样存在。代码可在https://github.com/pzs19/HarnessPro获取。",
+      "translated_title": "HarnessPro：基于帕累托优化的递归测试框架自我改进以实现性能与成本的权衡",
+      "translated_abstract": "测试框架开发在构建强大 AI 智能体中起着至关重要的作用。近期的方法通过递归自我改进来提升测试框架，但其性能提升往往伴随着更高的执行成本。我们引入了 HarnessPro，一种无需标签的测试框架进化方法，旨在提高任务性能的同时降低执行成本。在此设置中，候选测试框架使用 LLM 生成的测试进行评估，而无需访问真实答案或官方测试。专门的智能体诊断执行轨迹，规划具有不同性能-成本优先级的更新，并将其作为候选测试框架实现。HarnessPro 不是返回单一测试框架，而是使用归一化加权平方距离选择，为不同的部署预算提供侧重成本、平衡型和侧重性能的测试框架。选定的测试框架进入下一次迭代，其中执行反馈指导进一步的更新。我们的实验涵盖了 Terminal-Bench 2、SWE-Bench Pro 和 ProgramBench，使用带有 Codex 的 GPT-5.5 和带有 Claude Code 的 GLM-5.2。在这些使用带有 Codex 的 GPT-5.5 的基准测试中，HarnessPro 的重型模式相对于 RHO 实现了 2.0 个百分点的平均通过率提升和 26.1% 的平均单任务成本降低。在使用带有 Claude Code 的 GLM-5.2 时，这一优势同样保持。代码可在 https://github.com/pzs19/HarnessPro 获取。",
       "tag": "产品技术支持",
       "topic_tags": [
         "智能体",
         "推理",
         "评测",
-        "加速"
+        "Benchmark"
       ],
       "institutions": [
         "Tsinghua University",
