@@ -1,11 +1,11 @@
 {
   "summary": {
-    "updated_at": "2026-11-04T07:03:02.229951+00:00",
+    "updated_at": "2026-11-05T07:29:33.451265+00:00",
     "final_count": 220,
     "product_related": 30,
     "product_support": 19,
     "academic_output": 171,
-    "new_papers": 1
+    "new_papers": 0
   },
   "rows": [
     {
@@ -13,7 +13,7 @@
       "title": "LIRA: A More Interpretable Dynamic Loss-Informed Rank Allocation for Low-Rank Adaptation",
       "authors": "Sihao Wang, Bozheng Li, Xuemiao Xu, Haoxin Yang, Yujie Xu, Jie Tang",
       "translated_title": "LIRA：一种面向低秩自适应的更具可解释性的动态损失感知秩分配方法",
-      "translated_abstract": "低秩自适应已成为大型预训练模型中广泛使用的参数高效微调方法。然而，标准 LoRA 通常分配固定的秩配置，忽略了层和阶段的自适应需求，而近期的自适应秩变体通常依赖启发式或一阶信号，这些信号仅提供秩重分配与局部损失行为之间的间接联系。这使得每次秩重分配背后的原理缺乏充分的可解释性。基于这一不足，我们提出了 LIRA（损失感知秩分配），这是一种动态秩 LoRA 方法，旨在使在线秩重分配更具可解释性。LIRA 通过在二阶近似下估计与近期 LoRA 因子移动相关的局部损失扰动幅度来对每层进行评分，使每次秩变化的基础能够逐项解释。通过定期应用 DELTA（基于位移的损失轨迹分配算法，一种用于 LoRA 秩重分配的位移算法），LIRA 在匹配预算下产生离散的有效秩，同时保持与标准 (A,B) 适配器兼容。在 La-LoRA/LoRA 协议下的 RoBERTa-base GLUE 任务中，LIRA 优于该协议下报告的均匀 LoRA 和自适应秩基线；轨迹 EMA 在较低估计成本下实现了与定点 Fisher 相当的性能。",
+      "translated_abstract": "低秩自适应已成为大预训练模型广泛使用的参数高效微调方法。然而，标准 LoRA 通常分配固定的秩配置，忽略了层和阶段的自适应需求，而近期自适应秩变体通常依赖启发式或一阶信号，这些信号仅提供秩重分配与局部损失行为之间的间接联系。这导致每次秩重分配背后的原理缺乏充分的可解释性。基于这一不足，我们提出 LIRA（损失感知秩分配），一种旨在使在线秩重分配更具可解释性的动态秩 LoRA 方法。LIRA 通过在二阶近似下估计与近期 LoRA 因子移动相关的局部损失扰动幅度来对每层进行评分，使每次秩变化的基础能够逐项解释。通过定期应用 DELTA（位移评估损失轨迹分配，一种基于位移的 LoRA 秩重分配算法），LIRA 在匹配预算下产生离散的有效秩，同时保持与标准 (A,B) 适配器兼容。在 La-LoRA/LoRA 协议下的 RoBERTa-base GLUE 任务中，LIRA 优于该协议下报告的均匀 LoRA 和自适应秩基线；轨迹 EMA 在较低估计成本下实现了与定点 Fisher 相当的性能。",
       "tag": "非产品相关",
       "topic_tags": [
         "模型",
